@@ -60,6 +60,7 @@ if (pkg.fallbackDependencies && pkg.fallbackDependencies.repos) { // do nothing 
         })
         console.log() // new line
         // TODO: do npm ci in the new dir only if package-lock exists
+        // TODO: also add a feature to do manual updates by CDing into dirs and doing a git pull
         console.log() // new line
         break // if it successfully clones, skip trying the fallback
       } catch (e) {
