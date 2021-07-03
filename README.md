@@ -16,7 +16,6 @@ Here's an example:
 ```js
 "fallbackDependencies": {
   "dir": "lib",
-  "overwrite": true,
   "repos": {
     "some-private-dependency": [
       "https://some.private.git.repo.somewhere",
@@ -30,11 +29,17 @@ Here's an example:
 }
 ```
 
+Lastly, add a `postinstall` script to your npm scripts to execute the `fallback-dependencies` script after you install other dependencies:
+
+```js
+  "scripts": {
+    "postinstall": "node node_modules/fallback-dependencies/fallback-dependencies.js"
+  },
+```
+
 ### API
 
 - `dir` *[String]*: What directory to deposit fallback dependencies into.
-  - Default: `fallback_dependencies`
-- `overwrite` *[Boolean]*: Whether or not to replace existing clones of fallback dependencies with new clones when the script is re-run.
-  - Default: `false`
+  - Default: `fallback_dependencies`.
 - `repos` *[Object]* of *[Arrays]* of *[Strings]*: A list of dependencies similar to the `dependencies` field in package.json, but instead of supplying a string for where to fetch it, you supply an array of strings of possible locations to fetch it from. This script will attempt to fetch it from the first location, then if that fails will fallback to the second possible place to get it from, and so on until it runs out of places to try.
-  - Default: `{}`
+  - Default: `{}`.
