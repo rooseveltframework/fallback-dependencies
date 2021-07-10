@@ -4,7 +4,23 @@ const { execSync } = require('child_process')
 let pkgPath = process.argv[1] // full path of postinstall script being executed, presumably buried in node_modules in your app
 pkgPath = pkgPath.split('node_modules')[0] // take only the part preceding node_modules
 const pkg = require(pkgPath + 'package.json') // require the package.json in that folder
-if (pkg.fallbackDependencies && pkg.fallbackDependencies.repos) { // do nothing if this entry in package.json isn't there
+let reposFile = {}
+if (pkg.fallbackDependencies && (pkg.fallbackDependencies.repos || pkg.fallbackDependencies.reposFile)) { // do nothing if these entries in package.json aren't there
+  if (!pkg.fallbackDependencies.repos) {
+    pkg.fallbackDependencies.repos = {}
+  }
+  if (pkg.fallbackDependencies.reposFile) {
+    try {
+      reposFile = require(pkgPath + pkg.fallbackDependencies.reposFile)
+    } catch (e) {
+      console.error('Could not load fallbackDependencies.reposFile.')
+      console.error(e)
+    }
+  }
+  pkg.fallbackDependencies.repos = {
+    ...pkg.fallbackDependencies.repos,
+    ...reposFile
+  }
   let fallbackDependenciesDir = 'fallback_dependencies'
   if (pkg.fallbackDependencies.dir) {
     fallbackDependenciesDir = pkg.fallbackDependencies.dir // set directory to deposit dependencies
