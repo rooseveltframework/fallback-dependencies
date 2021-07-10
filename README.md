@@ -25,7 +25,8 @@ Here's an example:
       "https://some.other.private.git.repo.somewhere",
       "https://some.other.private.git.repo.somewhere.else",
     ]
-  }
+  },
+  "reposFile": "fallback-dependencies.json"
 }
 ```
 
@@ -43,3 +44,21 @@ Lastly, add a `postinstall` script to your npm scripts to execute the `fallback-
   - Default: `fallback_dependencies`.
 - `repos` *[Object]* of *[Arrays]* of *[Strings]*: A list of dependencies similar to the `dependencies` field in package.json, but instead of supplying a string for where to fetch it, you supply an array of strings of possible locations to fetch it from. This script will attempt to fetch it from the first location, then if that fails will fallback to the second possible place to get it from, and so on until it runs out of places to try.
   - Default: `{}`.
+- `reposFile` *[String]*: Relative path to a JSON file that contains a list of repos formatted the same as the `repos` entry. If both `repos` and `reposFile` a supplied, the two lists will be merged.
+  - Default: `{}`.
+  - Example:
+    ```js
+    // fallback-dependencies.json
+    {
+      "some-private-dependency": [
+        "https://some.private.git.repo.somewhere",
+        "https://some.private.git.repo.somewhere.else",
+      ],
+      "some-other-private-dependency": [
+        "https://some.other.private.git.repo.somewhere",
+        "https://some.other.private.git.repo.somewhere.else",
+      ]
+    }
+    ```
+
+All params are optional, but the module won't do anything unless you supply at least `repos` or `reposFile`.
