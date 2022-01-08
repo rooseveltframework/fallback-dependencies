@@ -24,7 +24,7 @@
     "c8": "~7.10.0",
     "codecov": "~3.8.3",
     "eslint": "~8.5.0",
-    "eslint-plugin-ava": "~13.1.0",
+    "eslint-plugin-ava": "~13.2.0",
     "standard": "~16.0.3"
   },
   "eslintConfig": {
