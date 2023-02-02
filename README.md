@@ -38,6 +38,8 @@ Lastly, add a `postinstall` script to your npm scripts to execute the `fallback-
   },
 ```
 
+To clone a specific git tag, add `-b tag_name` to the URL, e.g. `"-b 1.0.5 https://some.private.git.repo.somewhere"`.
+
 ### API
 
 - `dir` *[String]*: What directory to deposit fallback dependencies into.
