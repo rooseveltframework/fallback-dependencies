@@ -63,7 +63,13 @@ if (pkg.fallbackDependencies && (pkg.fallbackDependencies.repos || pkg.fallbackD
               }
               break // stop checking fallbacks
             } else {
-              console.error('Cannot update ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' because it appears to be a different git repo or from a different remote!')
+              const parts = url.split(' ')
+              if (parts.includes('-b')) {
+                console.error('Cannot update ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' because clones using -b need to be cloned fresh. Please remove the clone first.')
+                break // stop checking fallbacks
+              } else {
+                console.error('Cannot update ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' because it appears to be a different git repo or from a different remote!')
+              }
             }
             continue // try the next fallback
           }
