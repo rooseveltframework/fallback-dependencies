@@ -7,7 +7,7 @@ A Node.js module that allows you to add git repo dependencies to your Node.js ap
 
 ## Usage
 
-First declare `fallback-dependencies` as a dependency in your app.
+First declare `fallback-dependencies` in `devDependencies` in your app.
 
 Then add a `fallbackDependencies` entry to your `package.json` alongside your `dependencies`, `devDependencies`, etc.
 
@@ -38,7 +38,9 @@ Lastly, add a `postinstall` script to your npm scripts to execute the `fallback-
   },
 ```
 
-To clone a specific git tag, add `-b tag_name` to the URL, e.g. `"-b 1.0.5 https://some.private.git.repo.somewhere"`.
+To clone a specific git tag, add `-b tag_name` to the URL, e.g. `"https://some.private.git.repo.somewhere -b 1.0.5"`.
+
+To skip installing dependencies for a specific fallback-dependency, add ` -skip-deps` to the end of the URL string, e.g. `"https://some.private.git.repo.somewhere -b 1.0.5 -skip-deps"`
 
 ### API
 

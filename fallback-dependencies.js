@@ -42,7 +42,12 @@ if (pkg.fallbackDependencies && (pkg.fallbackDependencies.repos || pkg.fallbackD
       fallbacks = [fallbacks] // coerce to an array of one member if given a string
     }
     for (const i in fallbacks) {
-      const url = fallbacks[i]
+      let url = fallbacks[i]
+      let skipDeps = false
+      if (url.slice(-11) === ' -skip-deps') {
+        url = url.slice(0, -11)
+        skipDeps = true
+      }
       try {
         if (fs.existsSync(fallbackDependenciesDir + '/' + dependency)) {
           if (!fs.existsSync(fallbackDependenciesDir + '/' + dependency + '/.git/config')) {
@@ -80,8 +85,8 @@ if (pkg.fallbackDependencies && (pkg.fallbackDependencies.repos || pkg.fallbackD
           stdio: [0, 1, 2], // display output from git
           cwd: path.resolve(fallbackDependenciesDir, '') // where we're cloning the repo to
         })
-        // do npm ci in the new dir only if package-lock exists
-        if (fs.existsSync(fallbackDependenciesDir + '/' + dependency + '/package-lock.json')) {
+        // do npm ci in the new dir only if package-lock exists and the don't install deps flag is not set
+        if (fs.existsSync(fallbackDependenciesDir + '/' + dependency + '/package-lock.json') && !skipDeps) {
           console.log('Running npm ci on ' + fallbackDependenciesDir + '/' + dependency + '...')
           execSync('npm ci', {
             stdio: [0, 1, 2], // display output from git
