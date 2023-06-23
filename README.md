@@ -42,6 +42,8 @@ To clone a specific git tag, add `-b tag_name` to the URL, e.g. `"https://some.p
 
 To skip installing dependencies for a specific fallback-dependency, add ` -skip-deps` to the end of the URL string, e.g. `"https://some.private.git.repo.somewhere -b 1.0.5 -skip-deps"`
 
+To prevent a fallback-dependency from being installed in a situation where the repo is not a direct dependency of the root project, append the `:directOnly` flag to the end of the dependency name, e.g. `"some-private-dependency:directOnly": [ ... ] `.
+
 ### API
 
 - `dir` *[String]*: What directory to deposit fallback dependencies into.

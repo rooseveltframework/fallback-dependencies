@@ -8,7 +8,7 @@
       "url": "https://github.com/rooseveltframework/fallback-dependencies/graphs/contributors"
     }
   ],
-  "version": "0.1.3",
+  "version": "0.1.4",
   "files": [
     "fallback-dependencies.js"
   ],
@@ -18,7 +18,9 @@
   "engines": {
     "node": ">=16.0.0"
   },
-  "dependencies": {},
+  "dependencies": {
+    "cross-env": "7.0.3"
+  },
   "devDependencies": {
     "ava": "5.3.1",
     "c8": "8.0.0",
