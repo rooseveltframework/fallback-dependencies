@@ -36,8 +36,19 @@ if (pkg.fallbackDependencies && (pkg.fallbackDependencies.repos || pkg.fallbackD
       process.exit(1)
     }
   }
-  for (const dependency in pkg.fallbackDependencies.repos) {
-    let fallbacks = pkg.fallbackDependencies.repos[dependency]
+  for (let dependency in pkg.fallbackDependencies.repos) {
+    const fullDep = dependency
+    const depFlags = dependency.split(':')
+    if (depFlags.length > 1) {
+      dependency = depFlags[0]
+      if (depFlags[1] === 'directOnly') {
+        if (process.env.FALLBACK_DEPENDENCIES_INITIATED_COMMAND) {
+          console.log('Skipping ' + dependency + ' because it is not a direct dependency.')
+          continue
+        }
+      }
+    }
+    let fallbacks = pkg.fallbackDependencies.repos[fullDep]
     if (!Array.isArray(fallbacks)) {
       fallbacks = [fallbacks] // coerce to an array of one member if given a string
     }
@@ -88,7 +99,7 @@ if (pkg.fallbackDependencies && (pkg.fallbackDependencies.repos || pkg.fallbackD
         // do npm ci in the new dir only if package-lock exists and the don't install deps flag is not set
         if (fs.existsSync(fallbackDependenciesDir + '/' + dependency + '/package-lock.json') && !skipDeps) {
           console.log('Running npm ci on ' + fallbackDependenciesDir + '/' + dependency + '...')
-          execSync('npm ci', {
+          execSync('cross-env FALLBACK_DEPENDENCIES_INITIATED_COMMAND=true npm ci', {
             stdio: [0, 1, 2], // display output from git
             cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
           })
