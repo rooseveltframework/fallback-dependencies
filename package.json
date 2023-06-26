@@ -8,7 +8,7 @@
       "url": "https://github.com/rooseveltframework/fallback-dependencies/graphs/contributors"
     }
   ],
-  "version": "0.1.4",
+  "version": "0.1.5",
   "files": [
     "fallback-dependencies.js"
   ],
