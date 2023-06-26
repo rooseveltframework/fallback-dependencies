@@ -76,7 +76,32 @@ function fallbackSandBox (appDir) {
             console.log('exec error: ' + error)
           }
         })
-    // console.log('Present working directory: ' + process.cwd())
+
+      // process.chdir(path)
+      if (fs.existsSync(`${rootPath}/test/clones`)) {
+        process.chdir(`${rootPath}/test/clones/repo1`)
+      }
+
+      const clonesRepo1Package = {
+        devDependencies: {
+          'fallback-dependencies': '../../../'
+        },
+        fallbackDependencies: {
+          dir: 'lib',
+          repos: {
+            'fallback-deps-test-repo-2': [
+              '../../../repos/repo2'
+            ]
+          }
+        },
+        scripts: {
+          postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
+        }
+      }
+
+      fs.writeFileSync(`${rootPath}/test/clones/repo1/package.json`, JSON.stringify(clonesRepo1Package))
+
+    //   console.log('Present working directory: ' + process.cwd())
     }
   } catch (e) { console.log(e) }
 }
