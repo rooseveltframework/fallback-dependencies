@@ -139,108 +139,53 @@ function fallbackSandBox (appDir) {
     })
 
     process.chdir(`${rootPath}/repos/repo1`)
-
     execSync('git --bare init',
         function (error) {
           if (error !== null) {
             console.log('exec error: ' + error)
           }
       })
-
     process.chdir(`${rootPath}/clones`)
-
-    try {
-      execSync(`git clone ${rootPath}/repos/repo1`)
-    } catch (err) {
-      console.log(err)
-    }
-
+    execSync(`git clone ${rootPath}/repos/repo1`)
     process.chdir(`${rootPath}/clones/repo1`)
-
     fs.writeFileSync(`${rootPath}/clones/repo1/package.json`, JSON.stringify(clonesRepo1Package))
-
     pushPackageJSON()
-
     fs.writeFileSync(`${rootPath}/clones/repo1/package-lock.json`, JSON.stringify(clonesRepo1PackageLocked))
-
     pushPackageLockJSON()
-
     process.chdir(`${rootPath}`)
-
     fs.mkdirSync('./repos/repo2/', err => {
       if (err) {
         console.error(err)
       }
       // file written successfully
     })
-
     process.chdir(`${rootPath}/repos/repo2`)
-
-    try {
-      execSync('git --bare init')
-    } catch (err) {
-      console.log('exec error: ' + err)
-    }
-
+    execSync('git --bare init')
     process.chdir(`${rootPath}/clones/`)
-
-    try {
-      execSync('git clone ../repos/repo2')
-    } catch (err) {
-      console.log(err)
-    }
-
+    execSync('git clone ../repos/repo2')
     process.chdir(`${rootPath}/clones/repo2`)
-
     fs.writeFileSync(`${rootPath}/clones/repo2/package.json`, JSON.stringify(clonesRepo2Package))
-
     pushPackageJSON()
-
     fs.writeFileSync(`${rootPath}/clones/repo2/package-lock.json`, JSON.stringify(clonesRepo2PackageLocked))
-
     pushPackageLockJSON()
-
     process.chdir(`${rootPath}`)
-
     fs.mkdirSync('./repos/repo3/', err => {
       if (err) {
         console.error(err)
       }
       // file written successfully
     })
-
     process.chdir('./repos/repo3')
-
-    try {
-      execSync('git --bare init')
-    } catch (err) {
-      console.log('exec error: ' + err)
-    }
-
+    execSync('git --bare init')
     process.chdir(`${rootPath}/clones/`)
-
-    try {
-      execSync('git clone ../repos/repo3')
-    } catch (err) {
-      console.log(err)
-    }
-
+    execSync('git clone ../repos/repo3')
     process.chdir(`${rootPath}/clones/repo3`)
-
     fs.writeFileSync(`${rootPath}/clones/repo3/package.json`, JSON.stringify(clonesRepo3Package))
-
     pushPackageJSON()
-
     fs.writeFileSync(`${rootPath}/clones/repo3/package-lock.json`, JSON.stringify(clonesRepo3PackageLocked))
-
     pushPackageLockJSON()
-
     process.chdir(`${rootPath}/clones/repo1`)
-    try {
-      execSync('npm i')
-    } catch (err) {
-      console.log(err)
-    }
+    execSync('npm i')
   } catch (err) { console.log(err) }
 }
 
