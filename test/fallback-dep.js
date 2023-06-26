@@ -22,7 +22,46 @@ function fallbackSandBox (appDir) {
   }
   const reposFolder = './repos'
   const clonesFolder = './clones'
-  const clonesRepo1Package = {
+
+  const repoList = ['repo1', 'repo2', 'repo3']
+
+  // for (const id in repoList) {
+  //   console.log(repoList[id])
+  // }
+  // Checks if the repos folder exist, if not it creates it
+  try {
+    if (!fs.existsSync(reposFolder)) {
+      // creat the repos folder in the test folder
+      fs.mkdirSync('./repos/', err => {
+        if (err) {
+          console.error(err)
+        }
+        // file written successfully
+      })
+    }
+    // Checks if the clone folder exist, if not it creates it
+    if (!fs.existsSync(clonesFolder)) {
+    // creat the clones folder in the test folder
+      fs.mkdirSync('./clones/', err => {
+        if (err) {
+          console.error(err)
+        }
+        // file written successfully
+      })
+    }
+
+    createRepo(repoList)
+
+    process.chdir(`${rootPath}/clones/repo1`)
+    execSync('npm i')
+  } catch (err) { console.log(err) }
+}
+
+function createRepo (repoList) {
+  const rootPath = __dirname
+  const { execSync } = require('child_process')
+  const fs = require('fs')
+  const repo1Package = {
     devDependencies: {
       'fallback-dependencies': '../../../'
     },
@@ -38,7 +77,7 @@ function fallbackSandBox (appDir) {
       postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
     }
   }
-  const clonesRepo1PackageLocked = {
+  const repo1PackageLocked = {
     name: 'repo1',
     lockfileVersion: 3,
     requires: true,
@@ -61,7 +100,7 @@ function fallbackSandBox (appDir) {
       }
     }
   }
-  const clonesRepo2Package = {
+  const repo2Package = {
     devDependencies: {
       'fallback-dependencies': '../../../../../'
     },
@@ -77,7 +116,7 @@ function fallbackSandBox (appDir) {
       postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
     }
   }
-  const clonesRepo2PackageLocked = {
+  const repo2PackageLocked = {
     name: 'repo1',
     lockfileVersion: 3,
     requires: true,
@@ -100,93 +139,40 @@ function fallbackSandBox (appDir) {
       }
     }
   }
-  const clonesRepo3Package = {}
-  const clonesRepo3PackageLocked = {
+  const repo3Package = {}
+  const repo3PackageLocked = {
     name: 'repo3',
     lockfileVersion: 3,
     requires: true,
     packages: {}
   }
-
-  // Checks if the repos folder exist, if not it creates it
-  try {
-    if (!fs.existsSync(reposFolder)) {
-      // creat the repos folder in the test folder
-      fs.mkdirSync('./repos/', err => {
-        if (err) {
-          console.error(err)
-        }
-        // file written successfully
-      })
-    }
-    // Checks if the clone folder exist, if not it creates it
-    if (!fs.existsSync(clonesFolder)) {
-    // creat the clones folder in the test folder
-      fs.mkdirSync('./clones/', err => {
-        if (err) {
-          console.error(err)
-        }
-        // file written successfully
-      })
-    }
-    // Checks if the repo1 folder exist, if not it creates it
-    // creat the clones folder in the test folder
-    fs.mkdirSync('./repos/repo1/', err => {
+  for (const id in repoList) {
+    console.log(repoList[id])
+    fs.mkdirSync(`./repos/${repoList[id]}/`, err => {
       if (err) {
         console.error(err)
       }
-      // file written successfully
+    // file written successfully
     })
+    const packageName = `${repoList[id]}Package`
+    const packageLockName = `${repoList[id]}PackageLocked`
 
-    process.chdir(`${rootPath}/repos/repo1`)
-    execSync('git --bare init',
-        function (error) {
-          if (error !== null) {
-            console.log('exec error: ' + error)
-          }
-      })
+    process.chdir(`${rootPath}/repos/${repoList[id]}`)
+    execSync('git --bare init')
     process.chdir(`${rootPath}/clones`)
-    execSync(`git clone ${rootPath}/repos/repo1`)
-    process.chdir(`${rootPath}/clones/repo1`)
-    fs.writeFileSync(`${rootPath}/clones/repo1/package.json`, JSON.stringify(clonesRepo1Package))
+    execSync(`git clone ${rootPath}/repos/${repoList[id]}`)
+    process.chdir(`${rootPath}/clones/${repoList[id]}`)
+    console.log(`${repoList[id]}Package`)
+    fs.writeFileSync(`${rootPath}/clones/${repoList[id]}/package.json`, JSON.stringify(packageName))
     pushPackageJSON()
-    fs.writeFileSync(`${rootPath}/clones/repo1/package-lock.json`, JSON.stringify(clonesRepo1PackageLocked))
+    fs.writeFileSync(`${rootPath}/clones/${repoList[id]}/package-lock.json`, JSON.stringify(packageLockName))
     pushPackageLockJSON()
     process.chdir(`${rootPath}`)
-    fs.mkdirSync('./repos/repo2/', err => {
-      if (err) {
-        console.error(err)
-      }
-      // file written successfully
-    })
-    process.chdir(`${rootPath}/repos/repo2`)
-    execSync('git --bare init')
-    process.chdir(`${rootPath}/clones/`)
-    execSync('git clone ../repos/repo2')
-    process.chdir(`${rootPath}/clones/repo2`)
-    fs.writeFileSync(`${rootPath}/clones/repo2/package.json`, JSON.stringify(clonesRepo2Package))
-    pushPackageJSON()
-    fs.writeFileSync(`${rootPath}/clones/repo2/package-lock.json`, JSON.stringify(clonesRepo2PackageLocked))
-    pushPackageLockJSON()
-    process.chdir(`${rootPath}`)
-    fs.mkdirSync('./repos/repo3/', err => {
-      if (err) {
-        console.error(err)
-      }
-      // file written successfully
-    })
-    process.chdir('./repos/repo3')
-    execSync('git --bare init')
-    process.chdir(`${rootPath}/clones/`)
-    execSync('git clone ../repos/repo3')
-    process.chdir(`${rootPath}/clones/repo3`)
-    fs.writeFileSync(`${rootPath}/clones/repo3/package.json`, JSON.stringify(clonesRepo3Package))
-    pushPackageJSON()
-    fs.writeFileSync(`${rootPath}/clones/repo3/package-lock.json`, JSON.stringify(clonesRepo3PackageLocked))
-    pushPackageLockJSON()
-    process.chdir(`${rootPath}/clones/repo1`)
-    execSync('npm i')
-  } catch (err) { console.log(err) }
+    if (repoList[id] === 'repo3') {
+      process.chdir(`${rootPath}/clones/repo1`)
+      execSync('npm i')
+    }
+  }
 }
 
 function pushPackageJSON () {
