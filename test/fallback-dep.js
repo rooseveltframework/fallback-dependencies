@@ -8,8 +8,6 @@ if (module.parent) {
 
 function fallbackSandBox (appDir) {
   const fs = require('fs')
-  const { execSync } = require('child_process')
-  const rootPath = __dirname
   const path = require('path')
   if (!appDir) {
     let processEnv
