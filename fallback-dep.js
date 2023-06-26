@@ -24,13 +24,20 @@ function fallbackSandBox (appDir) {
         // file written successfully
       })
     }
-  } catch (e) { console.log(e) }
-
-  // Checks if the clones folder exist, if not it creates it
-  try {
+    // Checks if the clone folder exist, if not it creates it
     if (!fs.existsSync(clonesFolder)) {
-      // creat the clones folder in the test folder
+    // creat the clones folder in the test folder
       fs.mkdirSync('./test/clones/', err => {
+        if (err) {
+          console.error(err)
+        }
+        // file written successfully
+      })
+    }
+    // Checks if the repo1 folder exist, if not it creates it
+    if (!fs.existsSync('./test/repos/repo1')) {
+    // creat the clones folder in the test folder
+      fs.mkdirSync('./test/repos/repo1/', err => {
         if (err) {
           console.error(err)
         }
