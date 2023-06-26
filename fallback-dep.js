@@ -44,36 +44,35 @@ function fallbackSandBox (appDir) {
       })
     }
     // Checks if the repo1 folder exist, if not it creates it
-    if (!fs.existsSync('./test/repos/repo1')) {
     // creat the clones folder in the test folder
-      fs.mkdirSync('./test/repos/repo1/', err => {
-        if (err) {
-          console.error(err)
-        }
-        // file written successfully
+    fs.mkdirSync('./test/repos/repo1/', err => {
+      if (err) {
+        console.error(err)
+      }
+      // file written successfully
+    })
+
+    process.chdir('./test/repos/repo1')
+
+    execSync('git --bare init',
+        function (error) {
+          if (error !== null) {
+            console.log('exec error: ' + error)
+          }
       })
 
-      process.chdir('./test/repos/repo1')
+    process.chdir(`${rootPath}/test/clones`)
 
-      execSync('git --bare init',
+    execSync(`git clone ${rootPath}/test/repos/repo1`,
         function (error) {
           if (error !== null) {
             console.log('exec error: ' + error)
           }
-        })
+      })
 
-      process.chdir(`${rootPath}/test/clones`)
+    process.chdir(`${rootPath}/test/clones/repo1`)
 
-      execSync(`git clone ${rootPath}/test/repos/repo1`,
-        function (error) {
-          if (error !== null) {
-            console.log('exec error: ' + error)
-          }
-        })
-
-      process.chdir(`${rootPath}/test/clones/repo1`)
-
-      const clonesRepo1Package = {
+    const clonesRepo1Package = {
         devDependencies: {
           'fallback-dependencies': '../../../'
         },
@@ -88,21 +87,13 @@ function fallbackSandBox (appDir) {
         scripts: {
           postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
         }
-      }
+    }
 
-      fs.writeFileSync(`${rootPath}/test/clones/repo1/package.json`, JSON.stringify(clonesRepo1Package))
+    fs.writeFileSync(`${rootPath}/test/clones/repo1/package.json`, JSON.stringify(clonesRepo1Package))
+    pushPackageJSON()
+    process.chdir(`${rootPath}/test/clones/repo1`)
 
-      try {
-        execSync('git add package.json')
-        execSync('git commit -m "commit"')
-        execSync('git push')
-      } catch (err) {
-        console.log(err)
-      }
-
-      process.chdir(`${rootPath}/test/clones/repo1`)
-
-      const clonesRepo1LockedPackage = {
+    const clonesRepo1PackageLocked = {
         name: 'repo1',
         lockfileVersion: 3,
         requires: true,
@@ -124,18 +115,161 @@ function fallbackSandBox (appDir) {
             link: true
           }
         }
-      }
-
-      fs.writeFileSync(`${rootPath}/test/clones/repo1/package-lock.json`, JSON.stringify(clonesRepo1LockedPackage))
-
-      try {
-        execSync('git add package-lock.json')
-        execSync('git commit -m "commit"')
-        execSync('git push')
-      } catch (err) {
-        console.log(err)
-      }
-      console.log('Present working directory: ' + process.cwd())
     }
-  } catch (e) { console.log(e) }
+
+    fs.writeFileSync(`${rootPath}/test/clones/repo1/package-lock.json`, JSON.stringify(clonesRepo1PackageLocked))
+
+    pushPackageLockJSON()
+
+    process.chdir(`${rootPath}`)
+    console.log('Present working directory: ' + process.cwd())
+
+    fs.mkdirSync('./test/repos/repo2/', err => {
+      if (err) {
+        console.error(err)
+      }
+      // file written successfully
+    })
+
+    process.chdir(`${rootPath}/test/repos/repo2`)
+
+    try {
+      execSync('git --bare init')
+    } catch (err) {
+      console.log(err)
+    }
+
+    process.chdir(`${rootPath}/test/clones/`)
+
+    try {
+      execSync('git clone ../repos/repo2')
+    } catch (err) {
+      console.log(err)
+    }
+
+    process.chdir(`${rootPath}/test/clones/repo2`)
+
+    const clonesRepo2Package = {
+      devDependencies: {
+        'fallback-dependencies': '../../../../../'
+      },
+      fallbackDependencies: {
+        dir: 'lib',
+        repos: {
+          'fallback-deps-test-repo-3': [
+            '../../../../../repos/repo3'
+          ]
+        }
+      },
+      scripts: {
+        postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
+      }
+    }
+
+    fs.writeFileSync(`${rootPath}/test/clones/repo2/package.json`, JSON.stringify(clonesRepo2Package))
+
+    pushPackageJSON()
+
+    const clonesRepo2PackageLocked = {
+      name: 'repo1',
+      lockfileVersion: 3,
+      requires: true,
+      packages: {
+        '': {
+          hasInstallScript: true,
+          devDependencies: {
+            'fallback-dependencies': '../../../../../'
+          }
+        },
+        '../../../../..': {
+          version: '0.1.0',
+          dev: true,
+          license: 'CC-BY-4.0',
+          devDependencies: {}
+        },
+        'node_modules/fallback-dependencies': {
+          resolved: '../../../../..',
+          link: true
+        }
+      }
+    }
+
+    fs.writeFileSync(`${rootPath}/test/clones/repo2/package-lock.json`, JSON.stringify(clonesRepo2PackageLocked))
+
+    pushPackageLockJSON()
+
+    process.chdir(`${rootPath}`)
+
+    fs.mkdirSync('./test/repos/repo3/', err => {
+      if (err) {
+        console.error(err)
+      }
+      // file written successfully
+    })
+
+    process.chdir('./test/repos/repo3')
+
+    execSync('git --bare init',
+      function (error) {
+        if (error !== null) {
+          console.log('exec error: ' + error)
+        }
+      })
+
+    process.chdir(`${rootPath}/test/clones/`)
+
+    try {
+      execSync('git clone ../repos/repo3')
+    } catch (err) {
+      console.log(err)
+    }
+
+    process.chdir(`${rootPath}/test/clones/repo3`)
+
+    const clonesRepo3Package = {}
+
+    fs.writeFileSync(`${rootPath}/test/clones/repo3/package.json`, JSON.stringify(clonesRepo3Package))
+
+    pushPackageJSON()
+
+    const clonesRepo3PackageLocked = {
+      name: 'repo3',
+      lockfileVersion: 3,
+      requires: true,
+      packages: {}
+    }
+
+    fs.writeFileSync(`${rootPath}/test/clones/repo3/package-lock.json`, JSON.stringify(clonesRepo3PackageLocked))
+
+    pushPackageLockJSON()
+
+    process.chdir(`${rootPath}/test/clones/repo1`)
+    try {
+      execSync('npm i')
+    } catch (err) {
+      console.log(err)
+    }
+  } catch (err) { console.log(err) }
+}
+
+function pushPackageJSON () {
+  const { execSync } = require('child_process')
+  try {
+    execSync('git add package.json')
+    execSync('git commit -m "commit"')
+    execSync('git push')
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+function pushPackageLockJSON () {
+  const { execSync } = require('child_process')
+  try {
+    execSync('git add package-lock.json')
+    execSync('git commit -m "commit"')
+    execSync('git push')
+  } catch (err) {
+    console.log(err)
+  }
 }
