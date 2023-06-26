@@ -100,7 +100,7 @@ function fallbackSandBox (appDir) {
         console.log(err)
       }
 
-      process.chdir(`${rootPath}/test/repos`)
+      process.chdir(`${rootPath}/test/clones/repo1`)
 
       const clonesRepo1LockedPackage = {
         name: 'repo1',
@@ -127,6 +127,14 @@ function fallbackSandBox (appDir) {
       }
 
       fs.writeFileSync(`${rootPath}/test/clones/repo1/package-lock.json`, JSON.stringify(clonesRepo1LockedPackage))
+
+      try {
+        execSync('git add package-lock.json')
+        execSync('git commit -m "commit"')
+        execSync('git push')
+      } catch (err) {
+        console.log(err)
+      }
       console.log('Present working directory: ' + process.cwd())
     }
   } catch (e) { console.log(e) }
