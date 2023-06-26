@@ -65,6 +65,7 @@ if (pkg.fallbackDependencies && (pkg.fallbackDependencies.repos || pkg.fallbackD
             console.error('Cannot update ' + fallbackDependenciesDir + '/' + dependency + ' because it does not appear to be a git repo!')
             break // move on to next dep
           } else {
+            let reClone = false
             // scan .git/config to see if `url` exists within it
             if (fs.readFileSync(fallbackDependenciesDir + '/' + dependency + '/.git/config', 'utf8').search(url) > 0) {
               // update only if it's a direct match — same repo from the same place
@@ -81,13 +82,32 @@ if (pkg.fallbackDependencies && (pkg.fallbackDependencies.repos || pkg.fallbackD
             } else {
               const parts = url.split(' ')
               if (parts.includes('-b')) {
-                console.error('Cannot update ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' because clones using -b need to be cloned fresh. Please remove the clone first.')
-                break // stop checking fallbacks
+                let version = ''
+                for (const key in parts) {
+                  const part = parts[key]
+                  if (part === '-b') {
+                    version = parts[parseInt(key) + 1]
+                    break
+                  }
+                }
+                const output = execSync('git describe --tags', {
+                  cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
+                })
+                if (output.toString().trim() === version) {
+                  console.log('Already up to date: ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' is already up to date because the commit\'s git tag matches the desired -b version number.')
+                  break // stop checking fallbacks
+                } else {
+                  console.log('Removing ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' because the commit\'s git tag does not match the desired -b version number. It will be re-cloned.')
+                  fs.rmSync(path.resolve(fallbackDependenciesDir + '/' + dependency, ''), { recursive: true, force: true })
+                  reClone = true
+                }
               } else {
                 console.error('Cannot update ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' because it appears to be a different git repo or from a different remote!')
               }
             }
-            continue // try the next fallback
+            if (!reClone) {
+              continue // try the next fallback
+            }
           }
         }
         // not updating, trying a fresh clone
@@ -98,8 +118,8 @@ if (pkg.fallbackDependencies && (pkg.fallbackDependencies.repos || pkg.fallbackD
         })
         // do npm ci in the new dir only if package-lock exists and the don't install deps flag is not set
         if (fs.existsSync(fallbackDependenciesDir + '/' + dependency + '/package-lock.json') && !skipDeps) {
-          console.log('Running npm ci on ' + fallbackDependenciesDir + '/' + dependency + '...')
-          execSync('cross-env FALLBACK_DEPENDENCIES_INITIATED_COMMAND=true npm ci', {
+          console.log('Running npm ci --omit=dev on ' + fallbackDependenciesDir + '/' + dependency + '...')
+          execSync('cross-env FALLBACK_DEPENDENCIES_INITIATED_COMMAND=true npm ci --omit=dev', {
             stdio: [0, 1, 2], // display output from git
             cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
           })

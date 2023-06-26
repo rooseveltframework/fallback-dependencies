@@ -4,6 +4,11 @@
 
 - Put your changes here...
 
+## 0.1.5
+
+- fallback-dependencies will now detect if your clone is out of date in the case of `-b` versioned entries. If it's out of date, it will remove the old clone and re-clone it.
+- fallback-dependencies will no longer install devDependencies of a given repo.
+
 ## 0.1.4
 
 - You can now prevent a fallback-dependency from being installed in a situation where the repo is not a direct dependency of the root project by appending the `directOnly:` flag to the end of the dependency name.
