@@ -5,7 +5,6 @@ if (module.parent) {
 } else {
   fallbackSandBox()
 }
-// const path = require('path')
 
 function fallbackSandBox (appDir) {
   const fs = require('fs')
@@ -54,9 +53,7 @@ function fallbackSandBox (appDir) {
         // file written successfully
       })
 
-      if (fs.existsSync('./test/repos/repo1')) {
-        process.chdir('./test/repos/repo1')
-      }
+      process.chdir('./test/repos/repo1')
 
       execSync('git --bare init',
         function (error) {
@@ -65,10 +62,7 @@ function fallbackSandBox (appDir) {
           }
         })
 
-      // process.chdir(path)
-      if (fs.existsSync(`${rootPath}/test/clones`)) {
-        process.chdir(`${rootPath}/test/clones`)
-      }
+      process.chdir(`${rootPath}/test/clones`)
 
       execSync(`git clone ${rootPath}/test/repos/repo1`,
         function (error) {
@@ -77,7 +71,6 @@ function fallbackSandBox (appDir) {
           }
         })
 
-      // process.chdir(path)
       if (fs.existsSync(`${rootPath}/test/clones`)) {
         process.chdir(`${rootPath}/test/clones/repo1`)
       }
@@ -101,24 +94,13 @@ function fallbackSandBox (appDir) {
 
       fs.writeFileSync(`${rootPath}/test/clones/repo1/package.json`, JSON.stringify(clonesRepo1Package))
 
-      execSync('git add package.json',
-        function (error) {
-          if (error !== null) {
-            console.log('exec error: ' + error)
-          }
-        })
-      execSync('git commit -m "commit"',
-        function (error) {
-          if (error !== null) {
-            console.log('exec error: ' + error)
-          }
-        })
-      execSync('git push',
-        function (error) {
-          if (error !== null) {
-            console.log('exec error: ' + error)
-          }
-        })
+      try {
+        execSync('git add package.json')
+        execSync('git commit -m "commit"')
+        execSync('git push')
+      } catch (err) {
+        console.log(err)
+      }
     //   console.log('Present working directory: ' + process.cwd())
     }
   } catch (e) { console.log(e) }
