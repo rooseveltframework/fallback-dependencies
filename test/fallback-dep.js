@@ -25,9 +25,6 @@ function fallbackSandBox (appDir) {
 
   const repoList = ['repo1', 'repo2', 'repo3']
 
-  // for (const id in repoList) {
-  //   console.log(repoList[id])
-  // }
   // Checks if the repos folder exist, if not it creates it
   try {
     if (!fs.existsSync(reposFolder)) {
@@ -51,10 +48,7 @@ function fallbackSandBox (appDir) {
     }
 
     createRepo(repoList)
-
-    process.chdir(`${rootPath}/clones/repo1`)
-    execSync('npm i')
-  } catch (err) { console.log(err) }
+  } catch {}
 }
 
 function createRepo (repoList) {
