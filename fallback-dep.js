@@ -101,6 +101,24 @@ function fallbackSandBox (appDir) {
 
       fs.writeFileSync(`${rootPath}/test/clones/repo1/package.json`, JSON.stringify(clonesRepo1Package))
 
+      execSync('git add package.json',
+        function (error) {
+          if (error !== null) {
+            console.log('exec error: ' + error)
+          }
+        })
+      execSync('git commit -m "commit"',
+        function (error) {
+          if (error !== null) {
+            console.log('exec error: ' + error)
+          }
+        })
+      execSync('git push',
+        function (error) {
+          if (error !== null) {
+            console.log('exec error: ' + error)
+          }
+        })
     //   console.log('Present working directory: ' + process.cwd())
     }
   } catch (e) { console.log(e) }
