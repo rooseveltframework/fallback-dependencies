@@ -71,9 +71,7 @@ function fallbackSandBox (appDir) {
           }
         })
 
-      if (fs.existsSync(`${rootPath}/test/clones`)) {
-        process.chdir(`${rootPath}/test/clones/repo1`)
-      }
+      process.chdir(`${rootPath}/test/clones/repo1`)
 
       const clonesRepo1Package = {
         devDependencies: {
@@ -101,7 +99,35 @@ function fallbackSandBox (appDir) {
       } catch (err) {
         console.log(err)
       }
-    //   console.log('Present working directory: ' + process.cwd())
+
+      process.chdir(`${rootPath}/test/repos`)
+
+      const clonesRepo1LockedPackage = {
+        name: 'repo1',
+        lockfileVersion: 3,
+        requires: true,
+        packages: {
+          '': {
+            hasInstallScript: true,
+            devDependencies: {
+              'fallback-dependencies': '../../../'
+            }
+          },
+          '../../..': {
+            version: '0.1.0',
+            dev: true,
+            license: 'CC-BY-4.0',
+            devDependencies: {}
+          },
+          'node_modules/fallback-dependencies': {
+            resolved: '../../..',
+            link: true
+          }
+        }
+      }
+
+      fs.writeFileSync(`${rootPath}/test/clones/repo1/package-lock.json`, JSON.stringify(clonesRepo1LockedPackage))
+      console.log('Present working directory: ' + process.cwd())
     }
   } catch (e) { console.log(e) }
 }
