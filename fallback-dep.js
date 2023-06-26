@@ -9,10 +9,20 @@ if (module.parent) {
 
 function fallbackSandBox (appDir) {
   const fs = require('fs')
-
+  const { execSync } = require('child_process')
+  const rootPath = __dirname
+  const path = require('path')
+  if (!appDir) {
+    let processEnv
+    if (fs.existsSync(path.join(process.cwd(), 'node_modules')) === false) {
+      processEnv = process.cwd()
+    } else {
+      processEnv = undefined
+    }
+    appDir = processEnv
+  }
   const reposFolder = './test/repos'
   const clonesFolder = './test/clones'
-
   // Checks if the repos folder exist, if not it creates it
   try {
     if (!fs.existsSync(reposFolder)) {
@@ -43,6 +53,30 @@ function fallbackSandBox (appDir) {
         }
         // file written successfully
       })
+
+      if (fs.existsSync('./test/repos/repo1')) {
+        process.chdir('./test/repos/repo1')
+      }
+
+      execSync('git --bare init',
+        function (error) {
+          if (error !== null) {
+            console.log('exec error: ' + error)
+          }
+        })
+
+      // process.chdir(path)
+      if (fs.existsSync(`${rootPath}/test/clones`)) {
+        process.chdir(`${rootPath}/test/clones`)
+      }
+
+      execSync(`git clone ${rootPath}/test/repos/repo1`,
+        function (error) {
+          if (error !== null) {
+            console.log('exec error: ' + error)
+          }
+        })
+    // console.log('Present working directory: ' + process.cwd())
     }
   } catch (e) { console.log(e) }
 }
