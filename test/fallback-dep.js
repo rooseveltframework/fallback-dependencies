@@ -158,35 +158,17 @@ function createRepo (repoList) {
     process.chdir(`${rootPath}/clones/${repoList[id]}`)
     console.log(`${repoList[id]}Package`)
     fs.writeFileSync(`${rootPath}/clones/${repoList[id]}/package.json`, JSON.stringify(packageName))
-    pushPackageJSON()
+    execSync('git add package.json')
+    execSync('git commit -m "commit"')
+    execSync('git push')
     fs.writeFileSync(`${rootPath}/clones/${repoList[id]}/package-lock.json`, JSON.stringify(packageLockName))
-    pushPackageLockJSON()
+    execSync('git add package-lock.json')
+    execSync('git commit -m "commit"')
+    execSync('git push')
     process.chdir(`${rootPath}`)
     if (repoList[id] === 'repo3') {
       process.chdir(`${rootPath}/clones/repo1`)
       execSync('npm i')
     }
-  }
-}
-
-function pushPackageJSON () {
-  const { execSync } = require('child_process')
-  try {
-    execSync('git add package.json')
-    execSync('git commit -m "commit"')
-    execSync('git push')
-  } catch (err) {
-    console.log(err)
-  }
-}
-
-function pushPackageLockJSON () {
-  const { execSync } = require('child_process')
-  try {
-    execSync('git add package-lock.json')
-    execSync('git commit -m "commit"')
-    execSync('git push')
-  } catch (err) {
-    console.log(err)
   }
 }
