@@ -4,6 +4,10 @@
 
 - Put your changes here...
 
+## 0.1.6
+
+- Backed out `--omit=dev` change from 0.1.5 that prevented fallback-dependencies from installing devDependencies of a given repo.
+
 ## 0.1.5
 
 - fallback-dependencies will now detect if your clone is out of date in the case of `-b` versioned entries. If it's out of date, it will remove the old clone and re-clone it.

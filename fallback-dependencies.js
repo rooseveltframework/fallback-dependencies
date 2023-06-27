@@ -118,8 +118,8 @@ if (pkg.fallbackDependencies && (pkg.fallbackDependencies.repos || pkg.fallbackD
         })
         // do npm ci in the new dir only if package-lock exists and the don't install deps flag is not set
         if (fs.existsSync(fallbackDependenciesDir + '/' + dependency + '/package-lock.json') && !skipDeps) {
-          console.log('Running npm ci --omit=dev on ' + fallbackDependenciesDir + '/' + dependency + '...')
-          execSync('cross-env FALLBACK_DEPENDENCIES_INITIATED_COMMAND=true npm ci --omit=dev', {
+          console.log('Running npm ci on ' + fallbackDependenciesDir + '/' + dependency + '...')
+          execSync('cross-env FALLBACK_DEPENDENCIES_INITIATED_COMMAND=true npm ci', {
             stdio: [0, 1, 2], // display output from git
             cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
           })
