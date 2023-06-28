@@ -1,16 +1,21 @@
 /* eslint-env mocha */
 const assert = require('assert')
 const cleanupTestApp = require('./util/cleanupTestApp')
+const fallback = require('./fallback-dep.js')
+
 const path = require('path')
 const appDir = path.join(__dirname, 'app/paramFunctionTest')
 const fs = require('fs')
 const { execSync } = require('child_process')
 
 describe('Testing script fallback-dep.js', function () {
-  beforeEach(function (done) {
-    execSync('node fallback-dep.js')
-    this.timeout(20000)
-    done()
+  before(async () => {
+    // const { execaNode } = await import('execa')
+    // await execaNode`/test/fallback-dep.js`
+    execSync('node ./test/fallback-dep.js')
+    // fallback.fallbackSandBox(appDir)
+    this.timeout(40000)
+    // done()
   })
 
   // delete the test app Directory and start with a clean state after each test
@@ -24,7 +29,7 @@ describe('Testing script fallback-dep.js', function () {
     })
   })
 
-  it('Testing if node fallback-dep.js creates a clones and repos folder in the ./test folder', function () {
+  it.only('Testing if node fallback-dep.js creates a clones and repos folder in the ./test folder', function () {
     // test to see if ./test/clones exist
     assert(fs.existsSync('./test/clones') === true, './test/clones does not exist')
     // test to see if ./test/repos exist
