@@ -1,19 +1,24 @@
 /* eslint-env mocha */
 const assert = require('assert')
 const cleanupTestApp = require('./util/cleanupTestApp')
-const fallback = require('./fallback-dep.js')
+// const fallback = require('./fallback-dep.js')
 
 const path = require('path')
 const appDir = path.join(__dirname, 'app/paramFunctionTest')
 const fs = require('fs')
-const { execSync } = require('child_process')
+const exec = require('child_process').exec
 
 describe('Testing script fallback-dep.js', function () {
   before(async () => {
-    // const { execaNode } = await import('execa')
-    // await execaNode`/test/fallback-dep.js`
-    execSync('node ./test/fallback-dep.js')
-    // fallback.fallbackSandBox(appDir)
+    const { execaNode } = await import('execa')
+    await execaNode`./fallback-dep.js`
+    // exec('node ./fallback-dep.js', (err, stdout, stderr) => {
+    //   if (err) {
+    //     console.error(err)
+    //     return
+    //   }
+    //   console.log(stdout)
+    // }) // fallback.fallbackSandBox(appDir)
     this.timeout(40000)
     // done()
   })

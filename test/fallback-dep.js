@@ -9,6 +9,9 @@ if (module.parent) {
 function fallbackSandBox (appDir) {
   const fs = require('fs')
   const path = require('path')
+  const { execSync } = require('child_process')
+  const repoList = ['repo1', 'repo2', 'repo3']
+
   if (!appDir) {
     let processEnv
     if (fs.existsSync(path.join(process.cwd(), 'node_modules')) === false) {
@@ -18,8 +21,6 @@ function fallbackSandBox (appDir) {
     }
     appDir = processEnv
   }
-
-  const repoList = ['repo1', 'repo2', 'repo3']
 
   // Checks if the repos folder exist, if not it creates it
   try {
@@ -43,141 +44,133 @@ function fallbackSandBox (appDir) {
       })
     }
 
-    createRepo(repoList, appDir)
+    const repo1Package = {
+      devDependencies: {
+        'fallback-dependencies': '../../../'
+      },
+      fallbackDependencies: {
+        dir: 'lib',
+        repos: {
+          'fallback-deps-test-repo-2': [
+            '../../../repos/repo2'
+          ]
+        }
+      },
+      scripts: {
+        postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
+      }
+    }
+    const repo1PackageLocked = {
+      name: 'repo1',
+      lockfileVersion: 3,
+      requires: true,
+      packages: {
+        '': {
+          hasInstallScript: true,
+          devDependencies: {
+            'fallback-dependencies': '../../../'
+          }
+        },
+        '../../..': {
+          version: '0.1.0',
+          dev: true,
+          license: 'CC-BY-4.0',
+          devDependencies: {}
+        },
+        'node_modules/fallback-dependencies': {
+          resolved: '../../..',
+          link: true
+        }
+      }
+    }
+    const repo2Package = {
+      devDependencies: {
+        'fallback-dependencies': '../../../../../'
+      },
+      fallbackDependencies: {
+        dir: 'lib',
+        repos: {
+          'fallback-deps-test-repo-3': [
+            '../../../../../repos/repo3'
+          ]
+        }
+      },
+      scripts: {
+        postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
+      }
+    }
+    const repo2PackageLocked = {
+      name: 'repo1',
+      lockfileVersion: 3,
+      requires: true,
+      packages: {
+        '': {
+          hasInstallScript: true,
+          devDependencies: {
+            'fallback-dependencies': '../../../../../'
+          }
+        },
+        '../../../../..': {
+          version: '0.1.0',
+          dev: true,
+          license: 'CC-BY-4.0',
+          devDependencies: {}
+        },
+        'node_modules/fallback-dependencies': {
+          resolved: '../../../../..',
+          link: true
+        }
+      }
+    }
+    const repo3Package = {}
+    const repo3PackageLocked = {
+      name: 'repo3',
+      lockfileVersion: 3,
+      requires: true,
+      packages: {}
+    }
+    const packageList = [[repo1Package, repo1PackageLocked], [repo2Package, repo2PackageLocked], [repo3Package, repo3PackageLocked]]
+    for (const id in repoList) {
+      fs.mkdirSync(`${appDir}/repos/${repoList[id]}/`, err => {
+        if (err) {
+          console.error(err)
+        }
+        // file written successfully
+      })
+
+      try {
+        // Change directory path
+        process.chdir(`${appDir}/repos/${repoList[id]}`)
+        // Run git command
+        execSync('git --bare init')
+        // Change directory path
+        process.chdir(`${appDir}/clones`)
+        // Run git command
+        execSync(`git clone ${appDir}/repos/${repoList[id]}`)
+        // Change directory path
+        process.chdir(`${appDir}/clones/${repoList[id]}`)
+        // Create the package.json file in the ./clones/..
+        fs.writeFileSync(`${appDir}/clones/${repoList[id]}/package.json`, JSON.stringify(packageList[id][0]))
+        // Run git command
+        execSync('git add package.json')
+        execSync('git commit -m "commit"')
+        execSync('git push')
+        // Create the package-lock.json file in the ./clones/..
+        fs.writeFileSync(`${appDir}/clones/${repoList[id]}/package-lock.json`, JSON.stringify(packageList[id][1]))
+        // Run git command
+        execSync('git add package-lock.json')
+        execSync('git commit -m "commit"')
+        execSync('git push')
+        // Change directory path
+        process.chdir(`${appDir}`)
+        // When we are in the last repo change path directory and run npm i
+        if (repoList[id] === 'repo3') {
+          process.chdir(`${appDir}/clones/repo1`)
+          execSync('npm i')
+        }
+      } catch (err) {
+        console.log(err)
+      }
+    }
   } catch {}
-}
-
-function createRepo (repoList, appDir) {
-  const rootPath = __dirname
-  console.log(rootPath)
-  const { execSync } = require('child_process')
-  const fs = require('fs')
-  const repo1Package = {
-    devDependencies: {
-      'fallback-dependencies': '../../../'
-    },
-    fallbackDependencies: {
-      dir: 'lib',
-      repos: {
-        'fallback-deps-test-repo-2': [
-          '../../../repos/repo2'
-        ]
-      }
-    },
-    scripts: {
-      postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
-    }
-  }
-  const repo1PackageLocked = {
-    name: 'repo1',
-    lockfileVersion: 3,
-    requires: true,
-    packages: {
-      '': {
-        hasInstallScript: true,
-        devDependencies: {
-          'fallback-dependencies': '../../../'
-        }
-      },
-      '../../..': {
-        version: '0.1.0',
-        dev: true,
-        license: 'CC-BY-4.0',
-        devDependencies: {}
-      },
-      'node_modules/fallback-dependencies': {
-        resolved: '../../..',
-        link: true
-      }
-    }
-  }
-  const repo2Package = {
-    devDependencies: {
-      'fallback-dependencies': '../../../../../'
-    },
-    fallbackDependencies: {
-      dir: 'lib',
-      repos: {
-        'fallback-deps-test-repo-3': [
-          '../../../../../repos/repo3'
-        ]
-      }
-    },
-    scripts: {
-      postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
-    }
-  }
-  const repo2PackageLocked = {
-    name: 'repo1',
-    lockfileVersion: 3,
-    requires: true,
-    packages: {
-      '': {
-        hasInstallScript: true,
-        devDependencies: {
-          'fallback-dependencies': '../../../../../'
-        }
-      },
-      '../../../../..': {
-        version: '0.1.0',
-        dev: true,
-        license: 'CC-BY-4.0',
-        devDependencies: {}
-      },
-      'node_modules/fallback-dependencies': {
-        resolved: '../../../../..',
-        link: true
-      }
-    }
-  }
-  const repo3Package = {}
-  const repo3PackageLocked = {
-    name: 'repo3',
-    lockfileVersion: 3,
-    requires: true,
-    packages: {}
-  }
-  const packageList = [[repo1Package, repo1PackageLocked], [repo2Package, repo2PackageLocked], [repo3Package, repo3PackageLocked]]
-  for (const id in repoList) {
-    fs.mkdirSync(`${appDir}/repos/${repoList[id]}/`, err => {
-      if (err) {
-        console.error(err)
-      }
-    // file written successfully
-    })
-
-    try {
-      // Change directory path
-      process.chdir(`${appDir}/repos/${repoList[id]}`)
-      // Run git command
-      execSync('git --bare init')
-      // Change directory path
-      process.chdir(`${appDir}/clones`)
-      // Run git command
-      execSync(`git clone ${appDir}/repos/${repoList[id]}`)
-      // Change directory path
-      process.chdir(`${appDir}/clones/${repoList[id]}`)
-      // Create the package.json file in the ./clones/..
-      fs.writeFileSync(`${appDir}/clones/${repoList[id]}/package.json`, JSON.stringify(packageList[id][0]))
-      // Run git command
-      execSync('git add package.json')
-      execSync('git commit -m "commit"')
-      execSync('git push')
-      // Create the package-lock.json file in the ./clones/..
-      fs.writeFileSync(`${appDir}/clones/${repoList[id]}/package-lock.json`, JSON.stringify(packageList[id][1]))
-      // Run git command
-      execSync('git add package-lock.json')
-      execSync('git commit -m "commit"')
-      execSync('git push')
-      // Change directory path
-      process.chdir(`${appDir}`)
-      // When we are in the last repo change path directory and run npm i
-      if (repoList[id] === 'repo3') {
-        process.chdir(`${appDir}/clones/repo1`)
-        execSync('npm i')
-      }
-    } catch (err) {
-      console.log(err)
-    }
-  }
 }
