@@ -9,12 +9,8 @@ const fs = require('fs')
 const { execSync } = require('child_process')
 
 describe('Testing script fallbackDep.js', function () {
-  // before(async () => {
-  //   const { execaNode } = await import('execa')
-  //   await execaNode`./fallbackDep.js`
-  //   this.timeout(20000)
-  // })
   before(function (done) {
+    // Run fallback dependancy script
     execSync('node ./../../fallbackDep.js')
     this.timeout(20000)
     done()
