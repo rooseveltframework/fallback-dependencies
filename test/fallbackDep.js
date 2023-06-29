@@ -1,12 +1,11 @@
 if (module.parent) {
   module.exports = {
-    fallbackSandBox
+    fallbackDependancySandBox
   }
 } else {
-  fallbackSandBox()
+  fallbackDependancySandBox()
 }
-
-function fallbackSandBox (appDir) {
+function fallbackDependancySandBox (appDir) {
   const fs = require('fs')
   const path = require('path')
   const { execSync } = require('child_process')
@@ -24,9 +23,9 @@ function fallbackSandBox (appDir) {
 
   // Checks if the repos folder exist, if not it creates it
   try {
-    if (!fs.existsSync('./../test/repos')) {
+    if (!fs.existsSync('./test/repos')) {
       // creat the repos folder in the test folder
-      fs.mkdirSync('./../test/repos', err => {
+      fs.mkdirSync('./test/repos', err => {
         if (err) {
           console.error(err)
         }
@@ -34,9 +33,9 @@ function fallbackSandBox (appDir) {
       })
     }
     // Checks if the clone folder exist, if not it creates it
-    if (!fs.existsSync('./../test/clones')) {
+    if (!fs.existsSync('./test/clones')) {
     // creat the clones folder in the test folder
-      fs.mkdirSync('./../test/clones/', err => {
+      fs.mkdirSync('./test/clones/', err => {
         if (err) {
           console.error(err)
         }
@@ -130,46 +129,46 @@ function fallbackSandBox (appDir) {
       packages: {}
     }
     const packageList = [[repo1Package, repo1PackageLocked], [repo2Package, repo2PackageLocked], [repo3Package, repo3PackageLocked]]
+    const rootPath = __dirname
     for (const id in repoList) {
-      fs.mkdirSync(`${appDir}/repos/${repoList[id]}/`, err => {
-        if (err) {
-          console.error(err)
-        }
-        // file written successfully
-      })
-
-      try {
-        // Change directory path
-        process.chdir(`${appDir}/repos/${repoList[id]}`)
-        // Run git command
-        execSync('git --bare init')
-        // Change directory path
-        process.chdir(`${appDir}/clones`)
-        // Run git command
-        execSync(`git clone ${appDir}/repos/${repoList[id]}`)
-        // Change directory path
-        process.chdir(`${appDir}/clones/${repoList[id]}`)
-        // Create the package.json file in the ./clones/..
-        fs.writeFileSync(`${appDir}/clones/${repoList[id]}/package.json`, JSON.stringify(packageList[id][0]))
-        // Run git command
-        execSync('git add package.json')
-        execSync('git commit -m "commit"')
-        execSync('git push')
-        // Create the package-lock.json file in the ./clones/..
-        fs.writeFileSync(`${appDir}/clones/${repoList[id]}/package-lock.json`, JSON.stringify(packageList[id][1]))
-        // Run git command
-        execSync('git add package-lock.json')
-        execSync('git commit -m "commit"')
-        execSync('git push')
-        // Change directory path
-        process.chdir(`${appDir}`)
-        // When we are in the last repo change path directory and run npm i
-        if (repoList[id] === 'repo3') {
-          process.chdir(`${appDir}/clones/repo1`)
-          execSync('npm i')
-        }
-      } catch (err) {
-        console.log(err)
+      if (!fs.existsSync(`${rootPath}/repos/${repoList[id]}/`)) {
+        fs.mkdirSync(`${rootPath}/repos/${repoList[id]}/`, err => {
+          if (err) {
+            console.error(err)
+          }
+          // file written successfully
+        })
+      }
+      // Change directory path
+      process.chdir(`${rootPath}/repos/${repoList[id]}`)
+      // Run git command
+      // console.log(appDir)
+      // console.log(process.cwd())
+      execSync('git --bare init')
+      // Change directory path
+      process.chdir(`${rootPath}/clones`)
+      // // Run git command
+      execSync(`git clone ${rootPath}/repos/${repoList[id]}`)
+      // Change directory path
+      process.chdir(`${rootPath}/clones/${repoList[id]}`)
+      // Create the package.json file in the ./clones/..
+      fs.writeFileSync(`${rootPath}/clones/${repoList[id]}/package.json`, JSON.stringify(packageList[id][0]))
+      // Run git command
+      execSync('git add package.json')
+      execSync('git commit -m "commit"')
+      execSync('git push')
+      // Create the package-lock.json file in the ./clones/..
+      fs.writeFileSync(`${rootPath}/clones/${repoList[id]}/package-lock.json`, JSON.stringify(packageList[id][1]))
+      // Run git command
+      execSync('git add package-lock.json')
+      execSync('git commit -m "commit"')
+      execSync('git push')
+      // Change directory path
+      process.chdir(`${rootPath}`)
+      // When we are in the last repo change path directory and run npm i
+      if (repoList[id] === 'repo3') {
+        process.chdir(`${rootPath}/clones/repo1`)
+        execSync('npm i')
       }
     }
   } catch {}
