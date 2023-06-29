@@ -52,39 +52,6 @@ describe('Testing script fallbackDep.js', function () {
   })
 
   it('Testing if clones of the repos contain package.json', function () {
-    const repo1Package = {
-      devDependencies: {
-        'fallback-dependencies': '../../../'
-      },
-      fallbackDependencies: {
-        dir: 'lib',
-        repos: {
-          'fallback-deps-test-repo-2': [
-            '../../../repos/repo2'
-          ]
-        }
-      },
-      scripts: {
-        postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
-      }
-    }
-    const repo2Package = {
-      devDependencies: {
-        'fallback-dependencies': '../../../../../'
-      },
-      fallbackDependencies: {
-        dir: 'lib',
-        repos: {
-          'fallback-deps-test-repo-3': [
-            '../../../../../repos/repo3'
-          ]
-        }
-      },
-      scripts: {
-        postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
-      }
-    }
-    const repo3Package = {}
     // test to see if ./test/clones/repo1/package.json exist
     assert(fs.existsSync(path.join(__dirname, '/clones/repo1/package.json')) === true, './test/clones/repo1/package.json does not exist')
     // test to see if ./test/clones/repo2/package.json exist
@@ -94,58 +61,6 @@ describe('Testing script fallbackDep.js', function () {
   })
 
   it('Testing if clones of the repos contain package-lock.json', function () {
-    const repo1PackageLocked = {
-      name: 'repo1',
-      lockfileVersion: 3,
-      requires: true,
-      packages: {
-        '': {
-          hasInstallScript: true,
-          devDependencies: {
-            'fallback-dependencies': '../../../'
-          }
-        },
-        '../../..': {
-          version: '0.1.0',
-          dev: true,
-          license: 'CC-BY-4.0',
-          devDependencies: {}
-        },
-        'node_modules/fallback-dependencies': {
-          resolved: '../../..',
-          link: true
-        }
-      }
-    }
-    const repo2PackageLocked = {
-      name: 'repo1',
-      lockfileVersion: 3,
-      requires: true,
-      packages: {
-        '': {
-          hasInstallScript: true,
-          devDependencies: {
-            'fallback-dependencies': '../../../../../'
-          }
-        },
-        '../../../../..': {
-          version: '0.1.0',
-          dev: true,
-          license: 'CC-BY-4.0',
-          devDependencies: {}
-        },
-        'node_modules/fallback-dependencies': {
-          resolved: '../../../../..',
-          link: true
-        }
-      }
-    }
-    const repo3PackageLocked = {
-      name: 'repo3',
-      lockfileVersion: 3,
-      requires: true,
-      packages: {}
-    }
     // test to see if ./test/clones/repo1/package-lock.json exist
     assert(fs.existsSync(path.join(__dirname, '/clones/repo1/package-lock.json')) === true, './test/clones/repo1/package-lock.json does not exist')
     // test to see if ./test/clones/repo2/package-lock.json exist
