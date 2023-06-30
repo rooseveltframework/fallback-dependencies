@@ -131,8 +131,8 @@ function fallbackDependancySandBox (appDir) {
     const packageList = [[repo1Package, repo1PackageLocked], [repo2Package, repo2PackageLocked], [repo3Package, repo3PackageLocked]]
     const rootPath = __dirname
     for (const id in repoList) {
-      if (!fs.existsSync(`${rootPath}/repos/${repoList[id]}/`)) {
-        fs.mkdirSync(`${rootPath}/repos/${repoList[id]}/`, err => {
+      if (!fs.existsSync(`./test/repos/${repoList[id]}/`)) {
+        fs.mkdirSync(`./test/repos/${repoList[id]}/`, err => {
           if (err) {
             console.error(err)
           }
@@ -140,36 +140,50 @@ function fallbackDependancySandBox (appDir) {
         })
       }
       // Change directory path
-      process.chdir(`${rootPath}/repos/${repoList[id]}`)
+      // process.chdir/('../repos')
+      process.chdir(`./test/repos/${repoList[id]}`)
       // Run git command
       // console.log(appDir)
       // console.log(process.cwd())
       execSync('git --bare init')
       // Change directory path
-      process.chdir(`${rootPath}/clones`)
+      process.chdir('./../test/clones')
       // // Run git command
-      execSync(`git clone ${rootPath}/repos/${repoList[id]}`)
+      // try {
+      execSync(`git clone   /test/repos/${repoList[id]}`)
       // Change directory path
-      process.chdir(`${rootPath}/clones/${repoList[id]}`)
-      // Create the package.json file in the ./clones/..
-      fs.writeFileSync(`${rootPath}/clones/${repoList[id]}/package.json`, JSON.stringify(packageList[id][0]))
-      // Run git command
+      // process.chdir(`${rootPath}/test/clones/${repoList[id]}`)
+      // // Create the package.json file in the ./clones/..
+      fs.writeFileSync(`${rootPath}/test/clones/${repoList[id]}/package.json`, JSON.stringify(packageList[id][0]))
+      // // Run git command
       execSync('git add package.json')
       execSync('git commit -m "commit"')
       execSync('git push')
-      // Create the package-lock.json file in the ./clones/..
-      fs.writeFileSync(`${rootPath}/clones/${repoList[id]}/package-lock.json`, JSON.stringify(packageList[id][1]))
-      // Run git command
-      execSync('git add package-lock.json')
+      // } catch (err) {
+      //   console.log(err)
+      // }
+      execSync(`git clone ./test/repos/${repoList[id]}`)
+      // // Change directory path
+      process.chdir(`./test/clones/${repoList[id]}`)
+      // // // Create the package.json file in the ./clones/..
+      fs.writeFileSync(`./test/clones/${repoList[id]}/package.json`, JSON.stringify(packageList[id][0]))
+      // // // Run git command
+      execSync('git add package.json')
       execSync('git commit -m "commit"')
       execSync('git push')
-      // Change directory path
-      process.chdir(`${rootPath}`)
-      // When we are in the last repo change path directory and run npm i
-      if (repoList[id] === 'repo3') {
-        process.chdir(`${rootPath}/clones/repo1`)
-        execSync('npm i')
-      }
+      // // Create the package-lock.json file in the ./clones/..
+      // fs.writeFileSync(`${rootPath}/clones/${repoList[id]}/package-lock.json`, JSON.stringify(packageList[id][1]))
+      // // Run git command
+      // execSync('git add package-lock.json')
+      // execSync('git commit -m "commit"')
+      // execSync('git push')
+      // // Change directory path
+      // process.chdir(`${rootPath}`)
+      // // When we are in the last repo change path directory and run npm i
+      // if (repoList[id] === 'repo3') {
+      //   process.chdir(`${rootPath}/clones/repo1`)
+      //   execSync('npm i')
+      // }
     }
   } catch {}
 }
