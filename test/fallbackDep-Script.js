@@ -5,13 +5,14 @@ const cleanupTestApp = require('./util/cleanupTestApp')
 
 const path = require('path')
 const appDir = path.join(__dirname, 'app/paramFunctionTest')
+const fallBackSandBox = path.join(__dirname, './util/fallbackDep.js')
 const fs = require('fs')
 const { execSync } = require('child_process')
 
 describe('Testing script fallbackDep.js', function () {
   before(function (done) {
     // Run fallback dependancy script
-    execSync('node ./../../fallbackDep.js')
+    execSync(`node ${fallBackSandBox}`)
     this.timeout(20000)
     done()
   })
@@ -34,12 +35,15 @@ describe('Testing script fallbackDep.js', function () {
   })
 
   it('Testing if node fallback-dep.js creates three repos in the ./test/repos folder', function () {
+    // try {
     // test to see if ./test/repos/repo1 exist
     assert(fs.existsSync(path.join(__dirname, '/repos/repo1')) === true, './test/repos/repo1 does not exist')
     // test to see if ./test/repos/repo2 exist
     assert(fs.existsSync(path.join(__dirname, '/repos/repo2')) === true, './test/repos/repo2 does not exist')
     // test to see if ./test/repos/repo3 exist
     assert(fs.existsSync(path.join(__dirname, '/repos/repo3')) === true, './test/repos/repo3 does not exist')
+
+    // } catch (err) {console.log(err)}
   })
 
   it('Testing if node fallback-dep.js creates three clones of the repos in the ./test/clones folder', function () {
@@ -50,5 +54,4 @@ describe('Testing script fallbackDep.js', function () {
     // test to see if ./test/clones/repo3 exist
     assert(fs.existsSync(path.join(__dirname, '/clones/repo3')) === true, './test/clones/repo3 does not exist')
   })
-
 })

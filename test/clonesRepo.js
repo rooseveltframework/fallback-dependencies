@@ -5,28 +5,30 @@ const cleanupTestApp = require('./util/cleanupTestApp')
 
 const path = require('path')
 const appDir = path.join(__dirname, 'app/paramFunctionTest')
+const fallBackSandBox = path.join(__dirname, './util/fallbackDep.js')
 const fs = require('fs')
 const { execSync } = require('child_process')
 
 describe('Testing files in the clones/repo#', function () {
-before(function (done) {
+  before(function (done) {
     // Run fallback dependancy script
-    execSync('node ./../../fallbackDep.js')
+    execSync(`node ${fallBackSandBox}`)
     this.timeout(20000)
     done()
-})
-// delete the test app Directory and start with a clean state after each test
-afterEach(function (done) {
-    cleanupTestApp(appDir, (err) => {
-    if (err) {
-        throw err
-    } else {
-        done()
-    }
-    })
-})
+  })
 
-it('Testing all files in clones/repo1', function () {
+  // delete the test app Directory and start with a clean state after each test
+  afterEach(function (done) {
+    cleanupTestApp(appDir, (err) => {
+      if (err) {
+        throw err
+      } else {
+        done()
+      }
+    })
+  })
+
+  it('Testing all files in clones/repo1', function () {
     // test to see if ./test/clones/repo1/node_modules exist
     assert(fs.existsSync(path.join(__dirname, '/clones/repo1/lib')) === true, './test/clones/repo1/lib does not exist')
     // test to see if ./test/clones/repo1/node_modules exist
@@ -35,22 +37,23 @@ it('Testing all files in clones/repo1', function () {
     assert(fs.existsSync(path.join(__dirname, '/clones/repo1/package.json')) === true, './test/clones/repo1/package.json does not exist')
     // test to see if ./test/clones/repo1/package-lock.json exist
     assert(fs.existsSync(path.join(__dirname, '/clones/repo1/package-lock.json')) === true, './test/clones/repo1/package-lock.json does not exist')
-})
-it('Testing all files in clones/repo2', function () {
+  })
+
+  it('Testing all files in clones/repo2', function () {
     // test to see if ./test/clones/repo2/package.json exist
     assert(fs.existsSync(path.join(__dirname, '/clones/repo2/package.json')) === true, './test/clones/repo2/package.json does not exist')
     // test to see if ./test/clones/repo2/package-lock.json exist
     assert(fs.existsSync(path.join(__dirname, '/clones/repo2/package-lock.json')) === true, './test/clones/repo2/package-lock.json does not exist')
-})
-it('Testing all files in clones/repo3', function () {
+  })
+
+  it('Testing all files in clones/repo3', function () {
     // test to see if ./test/clones/repo3/package.json exist
     assert(fs.existsSync(path.join(__dirname, '/clones/repo1/package.json')) === true, './test/clones/repo3/package.json does not exist')
     // test to see if ./test/clones/repo3/package-lock.json exist
     assert(fs.existsSync(path.join(__dirname, '/clones/repo1/package-lock.json')) === true, './test/clones/repo3/package-lock.json does not exist')
-})
+  })
 
-
-it('Testing if clones of the repos contain package.json', function () {
+  it('Testing if clones of the repos contain package.json', function () {
     // test to see if ./test/clones/repo1/package.json exist
     assert(fs.existsSync(path.join(__dirname, '/clones/repo1/package.json')) === true, './test/clones/repo1/package.json does not exist')
     // test to see if ./test/clones/repo2/package.json exist
@@ -78,7 +81,7 @@ it('Testing if clones of the repos contain package.json', function () {
   })
 
   it('Testing if ./clones/repo1/package.json holds the right information', function () {
-    const package = require('./clones/repo1/package.json')
+    const packageJSON = require('./clones/repo1/package.json')
     const repo1Package = {
       devDependencies: {
         'fallback-dependencies': '../../../'
@@ -94,14 +97,14 @@ it('Testing if clones of the repos contain package.json', function () {
       scripts: {
         postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
       }
-    }  
+    }
     // test to see if ./test/clones/repo1/package-lock.json exist
     assert(fs.existsSync(path.join(__dirname, '/clones/repo1/package.json')) === true, './test/clones/repo1/package.json does not exist')
-    assert.deepEqual(package,repo1Package, 'Testing to see if package.json in path matches the package object')
-   })
+    assert.deepEqual(packageJSON, repo1Package, 'Testing to see if package.json in path matches the package object')
+  })
 
-   it('Testing if ./clones/repo2/package.json holds the right information', function () {
-    const package = require('./clones/repo2/package.json')
+  it('Testing if ./clones/repo2/package.json holds the right information', function () {
+    const packageJSON = require('./clones/repo2/package.json')
     const repo2Package = {
       devDependencies: {
         'fallback-dependencies': '../../../../../'
@@ -120,19 +123,19 @@ it('Testing if clones of the repos contain package.json', function () {
     }
     // test to see if ./test/clones/repo1/package-lock.json exist
     assert(fs.existsSync(path.join(__dirname, '/clones/repo2/package.json')) === true, './test/clones/repo1/package.json does not exist')
-    assert.deepEqual(package,repo2Package, 'Testing to see if package.json in path matches the package object')
-   })
+    assert.deepEqual(packageJSON, repo2Package, 'Testing to see if package.json in path matches the package object')
+  })
 
-   it('Testing if ./clones/repo3/package.json holds the right information', function () {
-    const package = require('./clones/repo3/package.json')
+  it('Testing if ./clones/repo3/package.json holds the right information', function () {
+    const packageJSON = require('./clones/repo3/package.json')
     const repo3Package = {}
 
     // test to see if ./test/clones/repo1/package-lock.json exist
     assert(fs.existsSync(path.join(__dirname, '/clones/repo3/package.json')) === true, './test/clones/repo1/package.json does not exist')
-    assert.deepEqual(package,repo3Package, 'Testing to see if package.json in path matches the package object')
-   })
-  
-   it('Testing if ./clones/repo1/package-lock.json holds the right information', function () {
+    assert.deepEqual(packageJSON, repo3Package, 'Testing to see if package.json in path matches the package object')
+  })
+
+  it('Testing if ./clones/repo1/package-lock.json holds the right information', function () {
     const packageLock = require('./clones/repo1/package-lock.json')
     const repo1PackageLocked = {
       name: 'repo1',
@@ -158,13 +161,12 @@ it('Testing if clones of the repos contain package.json', function () {
       }
     }
     try {
-    assert(fs.existsSync(path.join(__dirname, '/clones/repo1/package-lock.json')) === true, './test/clones/repo1/package-lock.json does not exist')
-    assert.deepEqual(packageLock,repo1PackageLocked, 'Testing to see if package-lock.json in path matches the package-lock object ')
-
+      assert(fs.existsSync(path.join(__dirname, '/clones/repo1/package-lock.json')) === true, './test/clones/repo1/package-lock.json does not exist')
+      assert.deepEqual(packageLock, repo1PackageLocked, 'Testing to see if package-lock.json in path matches the package-lock object ')
     } catch {}
-   })
+  })
 
-   it('Testing if ./clones/repo2/package-lock.json holds the right information', function () {
+  it('Testing if ./clones/repo2/package-lock.json holds the right information', function () {
     const packageLock = require('./clones/repo2/package-lock.json')
     const repo2PackageLocked = {
       name: 'repo1',
@@ -190,13 +192,12 @@ it('Testing if clones of the repos contain package.json', function () {
       }
     }
     try {
-    assert(fs.existsSync(path.join(__dirname, '/clones/repo2/package-lock.json')) === true, './test/clones/repo2/package-lock.json does not exist')
-    assert.deepEqual(packageLock,repo2PackageLocked, 'Testing to see if package-lock.json in path matches the package-lock object ')
-
+      assert(fs.existsSync(path.join(__dirname, '/clones/repo2/package-lock.json')) === true, './test/clones/repo2/package-lock.json does not exist')
+      assert.deepEqual(packageLock, repo2PackageLocked, 'Testing to see if package-lock.json in path matches the package-lock object ')
     } catch {}
-   })
+  })
 
-   it('Testing if ./clones/repo3/package-lock.json holds the right information', function () {
+  it('Testing if ./clones/repo3/package-lock.json holds the right information', function () {
     const packageLock = require('./clones/repo3/package-lock.json')
     const repo3PackageLocked = {
       name: 'repo3',
@@ -205,9 +206,8 @@ it('Testing if clones of the repos contain package.json', function () {
       packages: {}
     }
     try {
-    assert(fs.existsSync(path.join(__dirname, '/clones/repo3/package-lock.json')) === true, './test/clones/repo3/package-lock.json does not exist')
-    assert.deepEqual(packageLock,repo3PackageLocked, 'Testing to see if package-lock.json in path matches the package-lock object ')
-
+      assert(fs.existsSync(path.join(__dirname, '/clones/repo3/package-lock.json')) === true, './test/clones/repo3/package-lock.json does not exist')
+      assert.deepEqual(packageLock, repo3PackageLocked, 'Testing to see if package-lock.json in path matches the package-lock object ')
     } catch {}
-   })
+  })
 })

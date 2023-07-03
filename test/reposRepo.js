@@ -3,13 +3,14 @@ const assert = require('assert')
 const cleanupTestApp = require('./util/cleanupTestApp')
 const path = require('path')
 const appDir = path.join(__dirname, 'app/paramFunctionTest')
+const fallBackSandBox = path.join(__dirname, './util/fallbackDep.js')
 const fs = require('fs')
 const { execSync } = require('child_process')
 
 describe('Checking if ./repos contains all files per repo#', function () {
   before(function (done) {
     // Run fallback dependancy script
-    execSync('node ./../../fallbackDep.js')
+    execSync(`node ${fallBackSandBox}`)
     this.timeout(20000)
     done()
   })
