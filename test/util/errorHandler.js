@@ -49,15 +49,10 @@ function fallbackDependancySandBox (appDir) {
         'fallback-dependencies': '../../../'
       },
       fallbackDependencies: {
-        dir: 'lib',
-        repos: {
-          'fallback-deps-test-repo-5': [
-            '../../../repos/repo5'
-          ]
-        }
+        dir: 'lib'
       },
       scripts: {
-        postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
+        postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js -b 1.0.5 -skip-deps'
       }
     }
     const repo4PackageLocked = {
@@ -89,14 +84,15 @@ function fallbackDependancySandBox (appDir) {
       },
       fallbackDependencies: {
         dir: 'lib',
-        repos: {
-          'fallback-deps-test-repo-6': [
-            '../../../../../repos/repo6'
-          ]
-        }
+        repo: {}
+        // repos: {
+        //   'fallback-deps-test-repo-6': [
+        //     '../../../../../repos/repo6'
+        //   ]
+        // }
       },
       scripts: {
-        postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
+        postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js -b 1.0.5 -skip-deps'
       }
     }
     const repo5PackageLocked = {
@@ -169,7 +165,7 @@ function fallbackDependancySandBox (appDir) {
       // When we are in the last repo change path directory and run npm i
       if (repoList[id] === 'repo6') {
         process.chdir(`${testSrc}/clones/repo4`)
-        execSync('npm i')
+        execSync('npm ci')
       }
     }
   } catch {}

@@ -1,10 +1,5 @@
-if (module.parent) {
-  module.exports = {
-    fallbackDependancySandBox
-  }
-} else {
-  fallbackDependancySandBox()
-}
+module.exports = fallbackDependancySandBox
+
 function fallbackDependancySandBox (appDir) {
   const fs = require('fs')
   const path = require('path')
@@ -164,13 +159,10 @@ function fallbackDependancySandBox (appDir) {
       execSync('git add package-lock.json')
       execSync('git commit -m "commit"')
       execSync('git push')
-      // Change directory path
-      process.chdir(`${testSrc}`)
-      // When we are in the last repo change path directory and run npm i
-      if (repoList[id] === 'repo3') {
-        process.chdir(`${testSrc}/clones/repo1`)
-        execSync('npm i')
-      }
     }
+    //  process.chdir(`${testSrc}`)
+    process.chdir(`${testSrc}/clones/repo1`)
+    const we = execSync('npm ci')
+    console.log(we.toString())
   } catch {}
 }
