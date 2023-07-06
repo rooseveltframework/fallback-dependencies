@@ -5,7 +5,6 @@ let pkgPath = process.argv[1] // full path of postinstall script being executed,
 pkgPath = pkgPath.split('node_modules')[0] // take only the part preceding node_modules
 const pkg = require(pkgPath + 'package.json') // require the package.json in that folder
 let reposFile = {}
-console.log('TESTING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 if (pkg.fallbackDependencies && (pkg.fallbackDependencies.repos || pkg.fallbackDependencies.reposFile)) { // do nothing if these entries in package.json aren't there
   if (!pkg.fallbackDependencies.repos) {
     pkg.fallbackDependencies.repos = {}
