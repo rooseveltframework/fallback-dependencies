@@ -164,7 +164,7 @@ function fallbackDependancySandBox (appDir) {
     // Run git command to push package and package-lock files
     const we = execSync('npm ci', {
       stdio: 'pipe', // hide output from git
-      cwd: path.resolve(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
+      cwd: path.resolve(`${testSrc}/clones/repo4`, '') // where we're cloning the repo to
     })
     console.log(we.toString())
   } catch {}

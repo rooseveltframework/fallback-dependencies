@@ -37,12 +37,12 @@ describe('Testing error handlers', function () {
 
   // // Testing line 10 <-- NOT WORKING
   it('Checking to see if `fallback-dependencies` still works if repos is non-presence', function () {
-  //   const repo4PKG = require('./clones/repo4/package.json')
+    // const repo4PKG = require('./clones/repo4/package.json')
   //   const repo5PKG = require('./clones/repo5/package.json')
   //   // console.log(process.mainModule)
   //   assert.deepEqual(repo4PKG.fallbackDependencies.repos, undefined, 'repos is present in package object')
   //   if (repo4PKG.fallbackDependencies.repos === undefined) {
-  //     assert(fs.existsSync(path.join(__dirname, '/clones/repo4/lib')) === false, './test/clones/repo4/lib does exist')
+    assert(fs.existsSync(path.join(__dirname, '/clones/repo4/lib')) === false, './test/clones/repo4/lib does exist')
   //     assert.deepEqual(repo5PKG.fallbackDependencies.repos, {}, 'repos is not an empty object')
   //   }
   })
