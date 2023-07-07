@@ -44,10 +44,11 @@ function fallbackDependancySandBox (appDir) {
         'fallback-dependencies': '../../../'
       },
       fallbackDependencies: {
-        dir: 'lib'
+        dir: 'lib',
+        reposFile: 'reposFile.json'
       },
       scripts: {
-        postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js -b 1.0.5 -skip-deps'
+        postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
       }
     }
     const repo4PackageLocked = {
@@ -73,21 +74,25 @@ function fallbackDependancySandBox (appDir) {
         }
       }
     }
+    const repoFileData = {
+      'fallback-deps-test-repo-5': [
+        '../../../repos/repo5'
+      ]
+    }
     const repo5Package = {
       devDependencies: {
         'fallback-dependencies': '../../../../../'
       },
       fallbackDependencies: {
         dir: 'lib',
-        repo: {}
-        // repos: {
-        //   'fallback-deps-test-repo-6': [
-        //     '../../../../../repos/repo6'
-        //   ]
-        // }
+        repos: {
+          'fallback-deps-test-repo-6': [
+            '../../../../../repos/repo6'
+          ]
+        }
       },
       scripts: {
-        postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js -b 1.0.5 -skip-deps'
+        postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
       }
     }
     const repo5PackageLocked = {
@@ -140,6 +145,9 @@ function fallbackDependancySandBox (appDir) {
         stdio: 'pipe', // hide output from git
         cwd: path.resolve(`${testSrc}/clones`, '') // where we're cloning the repo to
       })
+      if (repoList[id] === 'repo4') {
+        fs.writeFileSync(`${testSrc}/clones/repo4/reposFile.json`, JSON.stringify(repoFileData))
+      }
       // Change directory path
       process.chdir(`${testSrc}/clones/${repoList[id]}`)
       // Create the package.json and package-lock.json file in the ./clones/..
@@ -160,12 +168,12 @@ function fallbackDependancySandBox (appDir) {
         cwd: path.resolve(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
       })
     }
-
     // Run git command to push package and package-lock files
     const we = execSync('npm ci', {
       stdio: 'pipe', // hide output from git
       cwd: path.resolve(`${testSrc}/clones/repo4`, '') // where we're cloning the repo to
     })
     console.log(we.toString())
+    // process.chdir('./../../')
   } catch {}
 }
