@@ -7,20 +7,15 @@ const path = require('path')
 const appDir = path.join(__dirname, 'app/paramFunctionTest')
 const fallBackSandBox = path.join(__dirname, './util/fallbackDep.js')
 const fs = require('fs')
-const { execSync } = require('child_process')
 
 describe('Testing script fallbackDep.js', function () {
   before(function (done) {
+    // Creat new repos and clones folder
+    fs.rmSync(path.resolve('./test/clones'), { recursive: true, force: true })
+    fs.rmSync(path.resolve('./test/repos'), { recursive: true, force: true })
+
     // Run fallback dependancy script
-    if (fs.existsSync(path.join(__dirname, '/clones')) === true) {
-      execSync('rm -R ./test/clones')
-    }
-    if (fs.existsSync(path.join(__dirname, '/repos')) === true) {
-      execSync('rm -R ./test/repos')
-    }
-    // Run fallbac k dependancy script
     try {
-      console.log(require(fallBackSandBox))
       require(fallBackSandBox)()
     } catch (err) {
       console.log(err)

@@ -134,35 +134,42 @@ function fallbackDependancySandBox (appDir) {
           // file written successfully
         })
       }
-      // Change directory path
-      process.chdir(`${testSrc}/repos/${repoList[id]}`)
-      // Run git command
-      // console.log(appDir)
-      // console.log(process.cwd())
-      execSync('git --bare init')
-      // Change directory path
-      // process.chdir(`${rootPath}/clones`)
-      process.chdir(`${testSrc}/clones`)
-      // // Run git command
-      execSync(`git clone ${testSrc}/repos/${repoList[id]}`)
+      // Change directory path run git command
+      execSync('git --bare init', {
+        stdio: 'pipe', // hide output from git
+        cwd: path.resolve(`${testSrc}/repos/${repoList[id]}`, '') // where we're cloning the repo to
+      })
+      // Change directory path run git command
+      execSync(`git clone ${testSrc}/repos/${repoList[id]}`, {
+        stdio: 'pipe', // hide output from git
+        cwd: path.resolve(`${testSrc}/clones`, '') // where we're cloning the repo to
+      })
       // Change directory path
       process.chdir(`${testSrc}/clones/${repoList[id]}`)
-      // Create the package.json file in the ./clones/..
+      // Create the package.json and package-lock.json file in the ./clones/..
       fs.writeFileSync(`${testSrc}/clones/${repoList[id]}/package.json`, JSON.stringify(packageList[id][0]))
-      // Run git command
-      execSync('git add package.json')
-      execSync('git commit -m "commit"')
-      execSync('git push')
-      // Create the package-lock.json file in the ./clones/..
       fs.writeFileSync(`${testSrc}/clones/${repoList[id]}/package-lock.json`, JSON.stringify(packageList[id][1]))
-      // Run git command
-      execSync('git add package-lock.json')
-      execSync('git commit -m "commit"')
-      execSync('git push')
+
+      // Run git command to push package and package-lock files
+      execSync('git add .', {
+        stdio: 'pipe', // hide output from git
+        cwd: path.resolve(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
+      })
+      execSync('git commit -m "commit"', {
+        stdio: 'pipe', // hide output from git
+        cwd: path.resolve(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
+      })
+      execSync('git push', {
+        stdio: 'pipe', // hide output from git
+        cwd: path.resolve(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
+      })
     }
-    //  process.chdir(`${testSrc}`)
-    process.chdir(`${testSrc}/clones/repo1`)
-    const we = execSync('npm ci')
+
+    // Run git command to push package and package-lock files
+    const we = execSync('npm ci', {
+      stdio: 'pipe', // hide output from git
+      cwd: path.resolve(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
+    })
     console.log(we.toString())
   } catch {}
 }
