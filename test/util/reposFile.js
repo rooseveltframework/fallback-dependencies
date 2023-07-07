@@ -74,7 +74,7 @@ function fallbackDependancySandBox (appDir) {
         }
       }
     }
-    const repoFileData = {
+    const repo4FileData = {
       'fallback-deps-test-repo-5': [
         '../../../repos/repo5'
       ]
@@ -89,7 +89,9 @@ function fallbackDependancySandBox (appDir) {
           'fallback-deps-test-repo-6': [
             '../../../../../repos/repo6'
           ]
-        }
+        },
+        // misspell file name to cover lines 15-18
+        reposFile: 'reposFil.json'
       },
       scripts: {
         postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
@@ -125,6 +127,7 @@ function fallbackDependancySandBox (appDir) {
       requires: true,
       packages: {}
     }
+
     const packageList = [[repo4Package, repo4PackageLocked], [repo5Package, repo5PackageLocked], [repo6Package, repo6PackageLocked]]
     for (const id in repoList) {
       if (!fs.existsSync(`${testSrc}/repos/${repoList[id]}/`)) {
@@ -146,7 +149,7 @@ function fallbackDependancySandBox (appDir) {
         cwd: path.resolve(`${testSrc}/clones`, '') // where we're cloning the repo to
       })
       if (repoList[id] === 'repo4') {
-        fs.writeFileSync(`${testSrc}/clones/repo4/reposFile.json`, JSON.stringify(repoFileData))
+        fs.writeFileSync(`${testSrc}/clones/repo4/reposFile.json`, JSON.stringify(repo4FileData))
       }
       // Change directory path
       process.chdir(`${testSrc}/clones/${repoList[id]}`)
