@@ -7,6 +7,7 @@ const path = require('path')
 const appDir = path.join(__dirname, 'app/paramFunctionTest')
 const fallBackSandBox = path.join(__dirname, './util/fallbackDep.js')
 const errorHandlerSandBox = path.join(__dirname, './util/reposFile.js')
+const errorOPTSandBox = path.join(__dirname, './util/repoOptFiles.js')
 
 const fs = require('fs')
 
@@ -20,6 +21,7 @@ describe('Testing script fallbackDep.js', function () {
     try {
       require(fallBackSandBox)()
       require(errorHandlerSandBox)()
+      require(errorOPTSandBox)()
     } catch (err) {
       console.log(err)
     }
