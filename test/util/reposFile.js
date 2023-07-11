@@ -86,7 +86,7 @@ function fallbackDependancySandBox (appDir) {
       fallbackDependencies: {
         dir: 'lib',
         repos: {
-          'fallback-deps-test-repo-6': '../../../../../repos/repo6'
+          'fallback-deps-test-repo-6': '../../../../../repos/repo6 -b 1.0.5 -skip-deps'
         },
         // misspell file name to cover lines 15-18
         reposFile: 'reposFil.json'
