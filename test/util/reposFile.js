@@ -86,9 +86,7 @@ function fallbackDependancySandBox (appDir) {
       fallbackDependencies: {
         dir: 'lib',
         repos: {
-          'fallback-deps-test-repo-6': [
-            '../../../../../repos/repo6'
-          ]
+          'fallback-deps-test-repo-6': '../../../../../repos/repo6'
         },
         // misspell file name to cover lines 15-18
         reposFile: 'reposFil.json'
@@ -150,6 +148,7 @@ function fallbackDependancySandBox (appDir) {
       })
       if (repoList[id] === 'repo4') {
         fs.writeFileSync(`${testSrc}/clones/repo4/reposFile.json`, JSON.stringify(repo4FileData))
+        fs.mkdirSync(`${testSrc}/clones/repo4/lib`)
       }
       // Change directory path
       process.chdir(`${testSrc}/clones/${repoList[id]}`)
