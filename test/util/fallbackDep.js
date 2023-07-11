@@ -85,9 +85,7 @@ function fallbackDependancySandBox (appDir) {
       fallbackDependencies: {
         dir: 'lib',
         repos: {
-          'fallback-deps-test-repo-3': [
-            '../../../../../repos/repo3'
-          ]
+          'fallback-deps-test-repo-3': '../../../../../repos/repo3'
         }
       },
       scripts: {

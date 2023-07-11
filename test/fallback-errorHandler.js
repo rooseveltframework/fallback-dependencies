@@ -35,7 +35,6 @@ describe('Testing error handlers', function () {
     })
   })
 
-  // // Testing line 10 <-- NOT WORKING
   it('Checking to see if `fallback-dependencies` still works if repos is non-presence', function () {
     assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib')) === true, './clones/repo4/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib/fallback-deps-test-repo-5')) === true, './clones/repo4/lib/fallback-deps-test-repo-5 does not exist')

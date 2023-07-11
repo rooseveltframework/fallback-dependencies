@@ -188,9 +188,7 @@ describe('Testing script fallbackDep.js', function () {
       fallbackDependencies: {
         dir: 'lib',
         repos: {
-          'fallback-deps-test-repo-3': [
-            '../../../../../repos/repo3'
-          ]
+          'fallback-deps-test-repo-3': '../../../../../repos/repo3'
         }
       },
       scripts: {
