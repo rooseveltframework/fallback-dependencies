@@ -5,9 +5,10 @@ const cleanupTestApp = require('./util/cleanupTestApp')
 
 const path = require('path')
 const appDir = path.join(__dirname, 'app/paramFunctionTest')
-const fallBackSandBox = path.join(__dirname, './util/fallbackDep.js')
-const errorHandlerSandBox = path.join(__dirname, './util/reposFile.js')
-const errorOPTSandBox = path.join(__dirname, './util/repoOptFiles.js')
+const fallBackSandBox = path.join(__dirname, './util/fallbackSB01.js')
+const errorHandlerSandBox = path.join(__dirname, './util/fallbackSB02.js')
+const errorOPTSandBox = path.join(__dirname, './util/fallbackSB03.js')
+const sandBox04 = path.join(__dirname, './util/fallbackSB04.js')
 
 const fs = require('fs')
 
@@ -22,6 +23,7 @@ describe('Testing script fallbackDep.js', function () {
       require(fallBackSandBox)()
       require(errorHandlerSandBox)()
       require(errorOPTSandBox)()
+      require(sandBox04)()
     } catch (err) {
       console.log(err)
     }
