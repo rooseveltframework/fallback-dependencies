@@ -176,7 +176,5 @@ function fallbackDependancySandBox (appDir) {
     })
 
     console.log(we.toString())
-
-    // process.chdir('./../../')
   } catch {}
 }

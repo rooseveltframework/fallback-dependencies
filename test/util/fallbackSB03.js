@@ -148,7 +148,6 @@ function fallbackDependancySandBox (appDir) {
       })
       if (repoList[id] === 'repo7') {
         fs.writeFileSync(`${testSrc}/clones/repo7/reposFile.json`, JSON.stringify(repo7FileData))
-        fs.mkdirSync(`${testSrc}/clones/repo7/lib`)
       }
       // Change directory path
       process.chdir(`${testSrc}/clones/${repoList[id]}`)
@@ -175,13 +174,7 @@ function fallbackDependancySandBox (appDir) {
       stdio: 'pipe', // hide output from git
       cwd: path.resolve(`${testSrc}/clones/repo7`, '') // where we're cloning the repo to
     })
-    const wa = execSync('npm ci', {
-      stdio: 'pipe', // hide output from git
-      cwd: path.resolve(`${testSrc}/clones/repo7`, '') // where we're cloning the repo to
-    })
-    console.log(we.toString())
-    console.log(wa.toString())
 
-    // process.chdir('./../../')
+    console.log(we.toString())
   } catch {}
 }
