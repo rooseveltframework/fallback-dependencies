@@ -76,7 +76,7 @@ function fallbackDependancySandBox (appDir) {
     }
     const repo16FileData = {
       'fallback-deps-test-repo-17': [
-        '../../../repos/repo17', 'git://github.com/rooseveltframework/roosevelt.git  -b 1.0.5 -skip-deps'
+        '../../../repos/repo17', 'git://github.com/rooseveltframework/roosevelt.git -b 0.21.0 -skip-deps'
       ]
     }
     const repo17Package = {
@@ -177,8 +177,8 @@ function fallbackDependancySandBox (appDir) {
       stdio: 'pipe', // hide output from git
       cwd: path.resolve(`${testSrc}/clones/repo16`, '') // where we're cloning the repo to
     })
-    console.log(we.toString())
-    console.log(wa.toString())
+    // console.log(we.toString())
+    // console.log(wa.toString())
 
     // process.chdir('./../../')
   } catch {}

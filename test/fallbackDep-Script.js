@@ -11,6 +11,7 @@ const sandBox03 = path.join(__dirname, './util/fallbackSB03.js')
 const sandBox04 = path.join(__dirname, './util/fallbackSB04.js')
 const sandBox05 = path.join(__dirname, './util/fallbackSB05.js')
 const sandBox06 = path.join(__dirname, './util/fallbackSB06.js')
+const sandBox07 = path.join(__dirname, './util/fallbackSB07.js')
 
 const fs = require('fs')
 
@@ -28,6 +29,7 @@ describe('Testing script fallbackDep.js', function () {
       require(sandBox04)()
       require(sandBox05)()
       require(sandBox06)()
+      require(sandBox07)()
     } catch (err) {
       console.log(err)
     }
