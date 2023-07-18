@@ -177,9 +177,7 @@ function fallbackDependancySandBox (appDir) {
       cwd: path.resolve(`${testSrc}/clones/repo19`, '') // where we're cloning the repo to
     })
 
-    console.log(we.toString())
-    console.log(wa.toString())
-
-    // process.chdir('./../../')
+    // console.log(we.toString())
+    // console.log(wa.toString())
   } catch {}
 }
