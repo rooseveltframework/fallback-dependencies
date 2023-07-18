@@ -12,6 +12,7 @@ const sandBox04 = path.join(__dirname, './util/fallbackSB04.js')
 const sandBox05 = path.join(__dirname, './util/fallbackSB05.js')
 const sandBox06 = path.join(__dirname, './util/fallbackSB06.js')
 const sandBox07 = path.join(__dirname, './util/fallbackSB07.js')
+const sandBox08 = path.join(__dirname, './util/fallbackSB08.js')
 
 const fs = require('fs')
 
@@ -30,10 +31,11 @@ describe('Testing script fallbackDep.js', function () {
       require(sandBox05)()
       require(sandBox06)()
       require(sandBox07)()
+      require(sandBox08)()
     } catch (err) {
       console.log(err)
     }
-    this.timeout(10000000)
+    this.timeout(100000)
     done()
   })
   // delete the test app Directory and start with a clean state after each test
