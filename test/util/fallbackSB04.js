@@ -87,9 +87,7 @@ function fallbackDependancySandBox (appDir) {
         dir: 'test/lib',
         repos: {
           'fallback-deps-test-repo-12:': '../../../../../repos/repo12'
-        },
-        // misspell file name to cover lines 111-111
-        reposFile: 'reposFile.json'
+        }
       },
       scripts: {
         postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'

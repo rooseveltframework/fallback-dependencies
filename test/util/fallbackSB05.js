@@ -76,7 +76,7 @@ function fallbackDependancySandBox (appDir) {
     }
     const repo13FileData = {
       'fallback-deps-test-repo-14': [
-        '../../../repos/repo14'
+        '../../../repos/repo14', 'git://github.com/rooseveltframework/roosevelt.git'
       ]
     }
     const repo14Package = {

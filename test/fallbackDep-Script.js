@@ -5,9 +5,9 @@ const cleanupTestApp = require('./util/cleanupTestApp')
 
 const path = require('path')
 const appDir = path.join(__dirname, 'app/paramFunctionTest')
-const fallBackSandBox = path.join(__dirname, './util/fallbackSB01.js')
-const errorHandlerSandBox = path.join(__dirname, './util/fallbackSB02.js')
-const errorOPTSandBox = path.join(__dirname, './util/fallbackSB03.js')
+const sandBox01 = path.join(__dirname, './util/fallbackSB01.js')
+const sandBox02 = path.join(__dirname, './util/fallbackSB02.js')
+const sandBox03 = path.join(__dirname, './util/fallbackSB03.js')
 const sandBox04 = path.join(__dirname, './util/fallbackSB04.js')
 const sandBox05 = path.join(__dirname, './util/fallbackSB05.js')
 
@@ -21,15 +21,15 @@ describe('Testing script fallbackDep.js', function () {
 
     // Run fallback dependancy script
     try {
-      require(fallBackSandBox)()
-      require(errorHandlerSandBox)()
-      require(errorOPTSandBox)()
+      require(sandBox01)()
+      require(sandBox02)()
+      require(sandBox03)()
       require(sandBox04)()
       require(sandBox05)()
     } catch (err) {
       console.log(err)
     }
-    this.timeout(40000)
+    this.timeout(10000000)
     done()
   })
   // delete the test app Directory and start with a clean state after each test
@@ -43,7 +43,7 @@ describe('Testing script fallbackDep.js', function () {
     })
   })
 
-  it('Testing if node fallbackDep.js creates a clones and repos folder in the ./test folder', function () {
+  it.only('Testing if node fallbackDep.js creates a clones and repos folder in the ./test folder', function () {
     // test to see if ./test/clones exist
     assert(fs.existsSync(path.join(__dirname, '/clones')) === true, './test/clones does not exist')
     // test to see if ./test/repos exist

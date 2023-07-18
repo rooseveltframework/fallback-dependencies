@@ -88,7 +88,6 @@ function fallbackDependancySandBox (appDir) {
         repos: {
           'fallback-deps-test-repo-9:directOnly': '../../../../../repos/repo9'
         },
-        // misspell file name to cover lines 18-18
         reposFile: 'reposFile.json'
       },
       scripts: {
