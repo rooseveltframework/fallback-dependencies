@@ -238,8 +238,8 @@ function fallbackDependancySandBox (appDir) {
       stdio: 'pipe', // hide output from git
       cwd: path.resolve(`${testSrc}/clones/repo13`, '') // where we're cloning the repo to
     })
-    console.log(we.toString())
-    console.log(wa.toString())
+    // console.log(we.toString())
+    // console.log(wa.toString())
 
     // process.chdir('./../../')
   } catch {}
