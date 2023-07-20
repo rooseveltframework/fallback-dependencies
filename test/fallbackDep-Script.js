@@ -7,7 +7,6 @@ const path = require('path')
 const appDir = path.join(__dirname, 'app/paramFunctionTest')
 const fallbackSandBox = path.join(__dirname, './util/fallbackSandBox.js')
 
-// const sandBox04 = path.join(__dirname, './util/fallbackSB04.js')
 // const sandBox05 = path.join(__dirname, './util/fallbackSB05.js')
 // const sandBox06 = path.join(__dirname, './util/fallbackSB06.js')
 // const sandBox07 = path.join(__dirname, './util/fallbackSB07.js')
@@ -26,7 +25,6 @@ describe('Testing script fallbackDep.js', function () {
     try {
       require(fallbackSandBox)()
 
-      // require(sandBox04)()
       // require(sandBox05)()
       // require(sandBox06)()
       // require(sandBox07)()
@@ -35,7 +33,7 @@ describe('Testing script fallbackDep.js', function () {
     } catch (err) {
       console.log(err)
     }
-    this.timeout(20000)
+    this.timeout(60000)
     done()
   })
   // delete the test app Directory and start with a clean state after each test
@@ -324,5 +322,10 @@ describe('Testing script fallbackDep.js', function () {
     assert(fs.existsSync(path.join(__dirname, './clones/repo7/lib')) === true, './clones/repo7/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo7/lib/fallback-deps-test-repo-8')) === true, './clones/repo7/lib/fallback-deps-test-repo-8 does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo7/lib/fallback-deps-test-repo-8/lib')) === true, './clones/repo7/lib/fallback-deps-test-repo-8/lib does not exist')
+  })
+
+  it('Checking to see if `fallback-dependencies` still works if the repo already exists', function () {
+    assert(fs.existsSync(path.join(__dirname, './clones/repo10/lib')) === true, './clones/repo10/lib does not exist')
+    assert(fs.existsSync(path.join(__dirname, './clones/repo10/lib/fallback-deps-test-repo-11')) === true, './clones/repo10/lib/fallback-deps-test-repo-11 does not exist')
   })
 })
