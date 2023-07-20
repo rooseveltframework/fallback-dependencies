@@ -60,8 +60,17 @@ if (pkg.fallbackDependencies && (pkg.fallbackDependencies.repos || pkg.fallbackD
         skipDeps = true
       }
       try {
+        console.log('*** HERE 00')
+        console.log('*** fallbackDependenciesDir')
+        console.log(fallbackDependenciesDir)
+        console.log('*** dependency')
+        console.log(dependency)
         if (fs.existsSync(fallbackDependenciesDir + '/' + dependency)) {
+          console.log('*** HERE 001')
+          console.log('*** fs.existsSync(fallbackDependenciesDir + / + dependency + /.git/config')
+          console.log(fs.existsSync(fallbackDependenciesDir + '/' + dependency + '/.git/config'))
           if (!fs.existsSync(fallbackDependenciesDir + '/' + dependency + '/.git/config')) {
+            console.log('*** HERE 002')
             console.error('Cannot update ' + fallbackDependenciesDir + '/' + dependency + ' because it does not appear to be a git repo!')
             break // move on to next dep
           } else {

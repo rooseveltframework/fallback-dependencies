@@ -168,33 +168,35 @@ function fallbackDependancySandBox (appDir) {
 
     // Run git command to push package and package-lock files
     const we = execSync('npm ci', {
-      stdio: 'pipe', // hide output from git
+      stdio: [0, 1, 2], // hide output from git
       cwd: path.resolve(`${testSrc}/clones/repo25`, '') // where we're cloning the repo to
     })
 
-    // fs.rmSync(path.resolve(`${testSrc}/repos/repo26/config`), { recursive: true, force: true })
-    // fs.rmSync(path.resolve(`${testSrc}/clones/repo26/.git`), { recursive: true, force: true })
+    fs.rmSync(path.resolve(`${testSrc}/repos/repo26/config`), { recursive: true, force: true })
+    fs.rmSync(path.resolve(`${testSrc}/clones/repo26/.git`), { recursive: true, force: true })
 
     fs.rmSync(path.resolve(`${testSrc}/clones/repo25/lib/fallback-deps-test-repo-26/.git`), { recursive: true, force: true })
-
-    execSync('git add .', {
-      stdio: 'pipe', // hide output from git
-      cwd: path.resolve(`${testSrc}/clones/repo25`, '') // where we're cloning the repo to
-    })
-    execSync('git commit -m "commit"', {
-      stdio: 'pipe', // hide output from git
-      cwd: path.resolve(`${testSrc}/clones/repo25`, '') // where we're cloning the repo to
-    })
-    execSync('git push', {
-      stdio: 'pipe', // hide output from git
-      cwd: path.resolve(`${testSrc}/clones/repo25`, '') // where we're cloning the repo to
-    })
-
+    try {
+      execSync('git add .', {
+        stdio: [0, 1, 2], // hide output from git
+        cwd: path.resolve(`${testSrc}/clones/repo25`, '') // where we're cloning the repo to
+      })
+      execSync('git commit -m "commit"', {
+        stdio: [0, 1, 2], // hide output from git
+        cwd: path.resolve(`${testSrc}/clones/repo25`, '') // where we're cloning the repo to
+      })
+      execSync('git push', {
+        stdio: [0, 1, 2], // hide output from git
+        cwd: path.resolve(`${testSrc}/clones/repo25`, '') // where we're cloning the repo to
+      })
+    } catch (e) {
+      console.log(e)
+    }
     const wa = execSync('npm ci', {
       stdio: 'pipe', // hide output from git
       cwd: path.resolve(`${testSrc}/clones/repo25`, '') // where we're cloning the repo to
     })
     // console.log(we.toString())
-    // console.log(wa.toString())
+    console.log(wa.toString())
   } catch {}
 }
