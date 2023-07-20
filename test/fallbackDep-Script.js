@@ -5,15 +5,17 @@ const cleanupTestApp = require('./util/cleanupTestApp')
 
 const path = require('path')
 const appDir = path.join(__dirname, 'app/paramFunctionTest')
-const sandBox01 = path.join(__dirname, './util/fallbackSB01.js')
-const sandBox02 = path.join(__dirname, './util/fallbackSB02.js')
-const sandBox03 = path.join(__dirname, './util/fallbackSB03.js')
-const sandBox04 = path.join(__dirname, './util/fallbackSB04.js')
-const sandBox05 = path.join(__dirname, './util/fallbackSB05.js')
-const sandBox06 = path.join(__dirname, './util/fallbackSB06.js')
-const sandBox07 = path.join(__dirname, './util/fallbackSB07.js')
-const sandBox08 = path.join(__dirname, './util/fallbackSB08.js')
-const sandBox09 = path.join(__dirname, './util/fallbackSB09.js')
+const fallbackSandBox = path.join(__dirname, './util/fallbackSandBox.js')
+
+// const sandBox01 = path.join(__dirname, './util/fallbackSB01.js')
+// const sandBox02 = path.join(__dirname, './util/fallbackSB02.js')
+// const sandBox03 = path.join(__dirname, './util/fallbackSB03.js')
+// const sandBox04 = path.join(__dirname, './util/fallbackSB04.js')
+// const sandBox05 = path.join(__dirname, './util/fallbackSB05.js')
+// const sandBox06 = path.join(__dirname, './util/fallbackSB06.js')
+// const sandBox07 = path.join(__dirname, './util/fallbackSB07.js')
+// const sandBox08 = path.join(__dirname, './util/fallbackSB08.js')
+// const sandBox09 = path.join(__dirname, './util/fallbackSB09.js')
 
 const fs = require('fs')
 
@@ -25,15 +27,16 @@ describe('Testing script fallbackDep.js', function () {
 
     // Run fallback dependancy script
     try {
-      require(sandBox01)()
-      require(sandBox02)()
-      require(sandBox03)()
-      require(sandBox04)()
-      require(sandBox05)()
-      require(sandBox06)()
-      require(sandBox07)()
-      require(sandBox08)()
-      require(sandBox09)()
+      require(fallbackSandBox)()
+      // require(sandBox01)()
+      // require(sandBox02)()
+      // require(sandBox03)()
+      // require(sandBox04)()
+      // require(sandBox05)()
+      // require(sandBox06)()
+      // require(sandBox07)()
+      // require(sandBox08)()
+      // require(sandBox09)()
     } catch (err) {
       console.log(err)
     }
