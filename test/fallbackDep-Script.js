@@ -7,7 +7,6 @@ const path = require('path')
 const appDir = path.join(__dirname, 'app/paramFunctionTest')
 const fallbackSandBox = path.join(__dirname, './util/fallbackSandBox.js')
 
-// const sandBox03 = path.join(__dirname, './util/fallbackSB03.js')
 // const sandBox04 = path.join(__dirname, './util/fallbackSB04.js')
 // const sandBox05 = path.join(__dirname, './util/fallbackSB05.js')
 // const sandBox06 = path.join(__dirname, './util/fallbackSB06.js')
@@ -27,7 +26,6 @@ describe('Testing script fallbackDep.js', function () {
     try {
       require(fallbackSandBox)()
 
-      // require(sandBox03)()
       // require(sandBox04)()
       // require(sandBox05)()
       // require(sandBox06)()
@@ -37,7 +35,7 @@ describe('Testing script fallbackDep.js', function () {
     } catch (err) {
       console.log(err)
     }
-    this.timeout(200000)
+    this.timeout(20000)
     done()
   })
   // delete the test app Directory and start with a clean state after each test
@@ -320,5 +318,11 @@ describe('Testing script fallbackDep.js', function () {
     assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6/package-lock.json')) === true, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6/package-lock.json does exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6/package.json')) === true, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6/package.json does exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6/lib')) === false, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6/lib does exist')
+  })
+
+  it('Checking to see if `fallback-dependencies` still works if the repo is not a direct dependency of the root project, append the `:directOnly`', function () {
+    assert(fs.existsSync(path.join(__dirname, './clones/repo7/lib')) === true, './clones/repo7/lib does not exist')
+    assert(fs.existsSync(path.join(__dirname, './clones/repo7/lib/fallback-deps-test-repo-8')) === true, './clones/repo7/lib/fallback-deps-test-repo-8 does not exist')
+    assert(fs.existsSync(path.join(__dirname, './clones/repo7/lib/fallback-deps-test-repo-8/lib')) === true, './clones/repo7/lib/fallback-deps-test-repo-8/lib does not exist')
   })
 })
