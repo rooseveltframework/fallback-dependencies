@@ -7,8 +7,6 @@ const path = require('path')
 const appDir = path.join(__dirname, 'app/paramFunctionTest')
 const fallbackSandBox = path.join(__dirname, './util/fallbackSandBox.js')
 
-// const sandBox01 = path.join(__dirname, './util/fallbackSB01.js')
-// const sandBox02 = path.join(__dirname, './util/fallbackSB02.js')
 // const sandBox03 = path.join(__dirname, './util/fallbackSB03.js')
 // const sandBox04 = path.join(__dirname, './util/fallbackSB04.js')
 // const sandBox05 = path.join(__dirname, './util/fallbackSB05.js')
@@ -28,8 +26,7 @@ describe('Testing script fallbackDep.js', function () {
     // Run fallback dependancy script
     try {
       require(fallbackSandBox)()
-      // require(sandBox01)()
-      // require(sandBox02)()
+
       // require(sandBox03)()
       // require(sandBox04)()
       // require(sandBox05)()
