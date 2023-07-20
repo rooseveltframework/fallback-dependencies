@@ -7,11 +7,10 @@ const path = require('path')
 const appDir = path.join(__dirname, 'app/paramFunctionTest')
 const fallbackSandBox = path.join(__dirname, './util/fallbackSandBox.js')
 
-// const sandBox05 = path.join(__dirname, './util/fallbackSB05.js')
-// const sandBox06 = path.join(__dirname, './util/fallbackSB06.js')
-const sandBox07 = path.join(__dirname, './util/fallbackSB07.js')
-// const sandBox08 = path.join(__dirname, './util/fallbackSB08.js')
-// const sandBox09 = path.join(__dirname, './util/fallbackSB09.js')
+const sandBox05 = path.join(__dirname, './util/fallbackSB05.js')
+const sandBox06 = path.join(__dirname, './util/fallbackSB06.js')
+const sandBox08 = path.join(__dirname, './util/fallbackSB08.js')
+const sandBox09 = path.join(__dirname, './util/fallbackSB09.js')
 
 const fs = require('fs')
 
@@ -25,14 +24,14 @@ describe('Testing script fallbackDep.js', function () {
     try {
       require(fallbackSandBox)()
 
-      // require(sandBox05)()
-      // require(sandBox06)()
-      // require(sandBox08)()
-      // require(sandBox09)()
+      require(sandBox05)()
+      require(sandBox06)()
+      require(sandBox08)()
+      require(sandBox09)()
     } catch (err) {
       console.log(err)
     }
-    this.timeout(60000)
+    this.timeout(100000)
     done()
   })
   // delete the test app Directory and start with a clean state after each test
@@ -46,7 +45,7 @@ describe('Testing script fallbackDep.js', function () {
     })
   })
 
-  it.only('Testing if node fallbackDep.js creates a clones and repos folder in the ./test folder', function () {
+  it('Testing if node fallbackDep.js creates a clones and repos folder in the ./test folder', function () {
     // test to see if ./test/clones exist
     assert(fs.existsSync(path.join(__dirname, '/clones')) === true, './test/clones does not exist')
     // test to see if ./test/repos exist
@@ -311,9 +310,9 @@ describe('Testing script fallbackDep.js', function () {
     assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib')) === true, './clones/repo4/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib/fallback-deps-test-repo-5')) === true, './clones/repo4/lib/fallback-deps-test-repo-5 does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib/fallback-deps-test-repo-5/lib')) === true, './clones/repo4/lib/fallback-deps-test-repo-5/lib does not exist')
-    assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6')) === false, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6 does exist')
-    assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6/package-lock.json')) === false, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6/package-lock.json does exist')
-    assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6/package.json')) === false, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6/package.json does exist')
+    assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6')) === true, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6 does exist')
+    assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6/package-lock.json')) === true, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6/package-lock.json does exist')
+    assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6/package.json')) === true, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6/package.json does exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6/lib')) === false, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6/lib does exist')
   })
 

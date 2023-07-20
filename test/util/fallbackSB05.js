@@ -229,18 +229,13 @@ function fallbackDependancySandBox (appDir) {
     fs.writeFileSync(`${testSrc}/clones/repo30/package.json`, JSON.stringify(repo30Package))
     fs.writeFileSync(`${testSrc}/clones/repo30/package-lock.json`, JSON.stringify(repo30PackageLocked))
 
-    // Run git command to push package and package-lock files
-    const we = execSync('npm ci', {
+    execSync('npm ci', {
       stdio: 'pipe', // hide output from git
       cwd: path.resolve(`${testSrc}/clones/repo13`, '') // where we're cloning the repo to
     })
-    const wa = execSync('npm ci', {
+    execSync('npm ci', {
       stdio: 'pipe', // hide output from git
       cwd: path.resolve(`${testSrc}/clones/repo13`, '') // where we're cloning the repo to
     })
-    // console.log(we.toString())
-    // console.log(wa.toString())
-
-    // process.chdir('./../../')
   } catch {}
 }

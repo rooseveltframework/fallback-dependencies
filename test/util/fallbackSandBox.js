@@ -379,7 +379,7 @@ function fallbackDependancySandBox (appDir) {
       requires: true,
       packages: {}
     }
-        const repo19Package = {
+    const repo19Package = {
       devDependencies: {
         'fallback-dependencies': '../../../'
       },
