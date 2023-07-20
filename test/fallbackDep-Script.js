@@ -9,7 +9,7 @@ const fallbackSandBox = path.join(__dirname, './util/fallbackSandBox.js')
 
 // const sandBox05 = path.join(__dirname, './util/fallbackSB05.js')
 // const sandBox06 = path.join(__dirname, './util/fallbackSB06.js')
-// const sandBox07 = path.join(__dirname, './util/fallbackSB07.js')
+const sandBox07 = path.join(__dirname, './util/fallbackSB07.js')
 // const sandBox08 = path.join(__dirname, './util/fallbackSB08.js')
 // const sandBox09 = path.join(__dirname, './util/fallbackSB09.js')
 
@@ -27,7 +27,6 @@ describe('Testing script fallbackDep.js', function () {
 
       // require(sandBox05)()
       // require(sandBox06)()
-      // require(sandBox07)()
       // require(sandBox08)()
       // require(sandBox09)()
     } catch (err) {
@@ -327,5 +326,10 @@ describe('Testing script fallbackDep.js', function () {
   it('Checking to see if `fallback-dependencies` still works if the repo already exists', function () {
     assert(fs.existsSync(path.join(__dirname, './clones/repo10/lib')) === true, './clones/repo10/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo10/lib/fallback-deps-test-repo-11')) === true, './clones/repo10/lib/fallback-deps-test-repo-11 does not exist')
+  })
+
+  it('Checking to see if  cloneing a specific git tag by using add `-b tag_name` works', function () {
+    assert(fs.existsSync(path.join(__dirname, './clones/repo19/lib')) === true, './clones/repo19/lib does not exist')
+    assert(fs.existsSync(path.join(__dirname, './clones/repo19/lib/fallback-deps-test-repo-20')) === true, './clones/repo19/lib/fallback-deps-test-repo-20 does not exist')
   })
 })
