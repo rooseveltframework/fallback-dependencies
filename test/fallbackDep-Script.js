@@ -8,9 +8,6 @@ const appDir = path.join(__dirname, 'app/paramFunctionTest')
 const fallbackSandBox = path.join(__dirname, './util/fallbackSandBox.js')
 
 const sandBox05 = path.join(__dirname, './util/fallbackSB05.js')
-const sandBox06 = path.join(__dirname, './util/fallbackSB06.js')
-const sandBox08 = path.join(__dirname, './util/fallbackSB08.js')
-const sandBox09 = path.join(__dirname, './util/fallbackSB09.js')
 
 const fs = require('fs')
 
@@ -24,9 +21,6 @@ describe('Testing script fallbackDep.js', function () {
     try {
       require(fallbackSandBox)()
       require(sandBox05)()
-      require(sandBox06)()
-      require(sandBox08)()
-      require(sandBox09)()
     } catch (err) {
       console.log(err)
     }
@@ -54,7 +48,7 @@ describe('Testing script fallbackDep.js', function () {
     assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2/lib/fallback-deps-test-repo-3/lib')) === false, './clones/repo1/lib/fallback-deps-test-repo-2/lib/fallback-deps-test-repo-3/lib does not exist')
   })
 
-  it('Checking to see if `fallback-dependencies` still works if repos is non-presence and replaced with reposFile', function () {
+  it('Testing if `fallback-dependencies` still works if repos is non-presence and replaced with reposFile', function () {
     assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib')) === true, './clones/repo4/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib/fallback-deps-test-repo-5')) === true, './clones/repo4/lib/fallback-deps-test-repo-5 does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib/fallback-deps-test-repo-5/lib')) === true, './clones/repo4/lib/fallback-deps-test-repo-5/lib does not exist')
@@ -64,23 +58,23 @@ describe('Testing script fallbackDep.js', function () {
     assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6/lib')) === false, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6/lib does exist')
   })
 
-  it('Checking to see if `fallback-dependencies` still works if the repo is not a direct dependency of the root project, append the `:directOnly`', function () {
+  it('Testing if `fallback-dependencies` still works if the repo is not a direct dependency of the root project, append the `:directOnly`', function () {
     assert(fs.existsSync(path.join(__dirname, './clones/repo7/lib')) === true, './clones/repo7/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo7/lib/fallback-deps-test-repo-8')) === true, './clones/repo7/lib/fallback-deps-test-repo-8 does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo7/lib/fallback-deps-test-repo-8/lib')) === true, './clones/repo7/lib/fallback-deps-test-repo-8/lib does not exist')
   })
 
-  it('Checking to see if `fallback-dependencies` still works if the repo already exists', function () {
+  it('Testing if `fallback-dependencies` still works if the repo already exists', function () {
     assert(fs.existsSync(path.join(__dirname, './clones/repo10/lib')) === true, './clones/repo10/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo10/lib/fallback-deps-test-repo-11')) === true, './clones/repo10/lib/fallback-deps-test-repo-11 does not exist')
   })
 
-  it('Checking to see if `fallback-dependencies` still works if there is a git pull error!', function () {
+  it('Testing if `fallback-dependencies` still works if there is a git pull error!', function () {
     assert(fs.existsSync(path.join(__dirname, './clones/repo13/lib')) === true, './clones/repo13/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo13/lib/fallback-deps-test-repo-30')) === true, './clones/repo13/lib/fallback-deps-test-repo-30 does not exist')
   })
 
-  it('Checking to see if skip installing dependencies for a specific fallback-dependency by using ` -skip-deps` works', function () {
+  it('Testing if skip installing dependencies for a specific fallback-dependency by using ` -skip-deps` works', function () {
     assert(fs.existsSync(path.join(__dirname, './clones/repo16/lib')) === true, './clones/repo16/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo16/lib/fallback-deps-test-repo-17')) === true, './clones/repo16/lib/fallback-deps-test-repo-17 does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo16/lib/fallback-deps-test-repo-17/.git')) === true, './clones/repo16/lib/fallback-deps-test-repo-17/.git does not exist')
@@ -92,7 +86,7 @@ describe('Testing script fallbackDep.js', function () {
     assert(fs.existsSync(path.join(__dirname, './clones/repo19/lib/fallback-deps-test-repo-20/.git')) === true, './clones/repo19/lib/fallback-deps-test-repo-20/.git does not exist')
   })
 
-  it('Checking to see if `fallback-dependencies` does not update if  repos is not a git repo', function () {
+  it('Testing if `fallback-dependencies` does not update if  repos is not a git repo', function () {
     assert(fs.existsSync(path.join(__dirname, './clones/repo25/lib')) === true, './clones/repo25/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo25/lib/fallback-deps-test-repo-26')) === true, './clones/repo19/lib/fallback-deps-test-repo-20 does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo25/lib/fallback-deps-test-repo-26/.git')) === false, './clones/repo25/lib/fallback-deps-test-repo-26/.git does exist')
