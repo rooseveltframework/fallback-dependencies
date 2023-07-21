@@ -417,8 +417,8 @@ function fallbackDependancySandBox (appDir) {
       }
     }
     const repo13FileData = {
-      'fallback-deps-test-repo-30': [
-        '../../../repos/repo30'
+      'fallback-deps-test-repo-28': [
+        '../../../repos/repo28'
       ]
     }
     const repo14Package = {
@@ -464,43 +464,6 @@ function fallbackDependancySandBox (appDir) {
       lockfileVersion: 3,
       requires: true,
       packages: {}
-    }
-    const repo30Package = {
-      devDependencies: {
-        'fallback-dependencies': '../../../../../../'
-      },
-      fallbackDependencies: {
-        dir: 'lib',
-        repos: {
-          'fallback-deps-test-repo-15': '../../../../../repos/repo15'
-        }
-      },
-      scripts: {
-        postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
-      }
-    }
-    const repo30PackageLocked = {
-      name: 'repo13',
-      lockfileVersion: 3,
-      requires: true,
-      packages: {
-        '': {
-          hasInstallScript: true,
-          devDependencies: {
-            'fallback-dependencies': '../../../../../'
-          }
-        },
-        '../../../../..': {
-          version: '0.1.0',
-          dev: true,
-          license: 'CC-BY-13.0',
-          devDependencies: {}
-        },
-        'node_modules/fallback-dependencies': {
-          resolved: '../../../../..',
-          link: true
-        }
-      }
     }
     const repo16Package = {
       devDependencies: {
@@ -839,6 +802,43 @@ function fallbackDependancySandBox (appDir) {
       requires: true,
       packages: {}
     }
+    const repo28Package = {
+      devDependencies: {
+        'fallback-dependencies': '../../../../../../'
+      },
+      fallbackDependencies: {
+        dir: 'lib',
+        repos: {
+          'fallback-deps-test-repo-15': '../../../../../repos/repo15'
+        }
+      },
+      scripts: {
+        postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
+      }
+    }
+    const repo28PackageLocked = {
+      name: 'repo13',
+      lockfileVersion: 3,
+      requires: true,
+      packages: {
+        '': {
+          hasInstallScript: true,
+          devDependencies: {
+            'fallback-dependencies': '../../../../../'
+          }
+        },
+        '../../../../..': {
+          version: '0.1.0',
+          dev: true,
+          license: 'CC-BY-13.0',
+          devDependencies: {}
+        },
+        'node_modules/fallback-dependencies': {
+          resolved: '../../../../..',
+          link: true
+        }
+      }
+    }
     const packageList = [
       [repo1Package, repo1PackageLocked], [repo2Package, repo2PackageLocked], [repo3Package, repo3PackageLocked], [repo4Package, repo4PackageLocked], [repo5Package, repo5PackageLocked], [repo6Package, repo6PackageLocked],
       [repo7Package, repo7PackageLocked], [repo8Package, repo8PackageLocked], [repo9Package, repo9PackageLocked], [repo10Package, repo10PackageLocked], [repo11Package, repo11PackageLocked], [repo12Package, repo12PackageLocked],
@@ -942,7 +942,7 @@ function fallbackDependancySandBox (appDir) {
       stdio: 'pipe', // hide output from git
       cwd: path.resolve(`${testSrc}/clones/repo10`, '') // where we're cloning the repo to
     })
-    fs.mkdirSync(`${testSrc}/repos/repo30`, err => {
+    fs.mkdirSync(`${testSrc}/repos/repo28`, err => {
       if (err) {
         console.error(err)
       }
@@ -950,15 +950,15 @@ function fallbackDependancySandBox (appDir) {
     })
     execSync('git --bare init', {
       stdio: 'pipe', // hide output from git
-      cwd: path.resolve(`${testSrc}/repos/repo30`, '') // where we're cloning the repo to
+      cwd: path.resolve(`${testSrc}/repos/repo28`, '') // where we're cloning the repo to
     })
     // Change directory path run git command
-    execSync(`git clone ${testSrc}/repos/repo30`, {
+    execSync(`git clone ${testSrc}/repos/repo28`, {
       stdio: 'pipe', // hide output from git
       cwd: path.resolve(`${testSrc}/clones`, '') // where we're cloning the repo to
     })
-    fs.writeFileSync(`${testSrc}/clones/repo30/package.json`, JSON.stringify(repo30Package))
-    fs.writeFileSync(`${testSrc}/clones/repo30/package-lock.json`, JSON.stringify(repo30PackageLocked))
+    fs.writeFileSync(`${testSrc}/clones/repo28/package.json`, JSON.stringify(repo28Package))
+    fs.writeFileSync(`${testSrc}/clones/repo28/package-lock.json`, JSON.stringify(repo28PackageLocked))
 
     execSync('npm ci', {
       stdio: 'pipe', // hide output from git

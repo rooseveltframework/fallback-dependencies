@@ -68,7 +68,7 @@ describe('Testing script fallbackDep.js', function () {
 
   it('Testing if `fallback-dependencies` still works if there is a git pull error!', function () {
     assert(fs.existsSync(path.join(__dirname, './clones/repo13/lib')) === true, './clones/repo13/lib does not exist')
-    assert(fs.existsSync(path.join(__dirname, './clones/repo13/lib/fallback-deps-test-repo-30')) === true, './clones/repo13/lib/fallback-deps-test-repo-30 does not exist')
+    assert(fs.existsSync(path.join(__dirname, './clones/repo13/lib/fallback-deps-test-repo-28')) === true, './clones/repo13/lib/fallback-deps-test-repo-28 does not exist')
   })
 
   it('Testing if skip installing dependencies for a specific fallback-dependency by using ` -skip-deps` works', function () {
