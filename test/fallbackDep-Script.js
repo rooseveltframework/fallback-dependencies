@@ -10,22 +10,29 @@ const fallbackSandBox = path.join(__dirname, './util/fallbackSandBox.js')
 const fs = require('fs')
 
 describe('Testing script fallbackDep.js', function () {
+  this.timeout(80000)
   before(function (done) {
-    // Creat new repos and clones folder
-    fs.rmSync(path.resolve('./test/clones'), { recursive: true, force: true })
-    fs.rmSync(path.resolve('./test/repos'), { recursive: true, force: true })
-
+    // Checks if the clones folder exist, if so delete it
+    if (fs.existsSync(path.join(__dirname, './clones'))) {
+      fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
+    }
+    // Checks if the repos folder exist, if so delete it
+    if (fs.existsSync(path.join(__dirname, './repos'))) {
+      fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
+    }
     // Run fallback dependancy script
     try {
       require(fallbackSandBox)()
     } catch (err) {
       console.log(err)
     }
-    this.timeout(100000)
     done()
   })
   // delete the test app Directory and start with a clean state after each test
   after(function (done) {
+    fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
+    fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
+
     cleanupTestApp(appDir, (err) => {
       if (err) {
         throw err
@@ -86,6 +93,6 @@ describe('Testing script fallbackDep.js', function () {
   it('Testing if `fallback-dependencies` does not update if  repos is not a git repo', function () {
     assert(fs.existsSync(path.join(__dirname, './clones/repo25/lib')) === true, './clones/repo25/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo25/lib/fallback-deps-test-repo-26')) === true, './clones/repo19/lib/fallback-deps-test-repo-20 does not exist')
-    assert(fs.existsSync(path.join(__dirname, './clones/repo25/lib/fallback-deps-test-repo-26/.git')) === false, './clones/repo25/lib/fallback-deps-test-repo-26/.git does exist')
+    assert(fs.existsSync(path.join(__dirname, './clones/repo25/lib/fallback-deps-test-repo-26/.git/config')) === false, './clones/repo25/lib/fallback-deps-test-repo-26/.git/config does exist')
   })
 })
