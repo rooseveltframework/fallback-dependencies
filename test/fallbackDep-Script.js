@@ -7,8 +7,6 @@ const path = require('path')
 const appDir = path.join(__dirname, 'app/paramFunctionTest')
 const fallbackSandBox = path.join(__dirname, './util/fallbackSandBox.js')
 
-const sandBox05 = path.join(__dirname, './util/fallbackSB05.js')
-
 const fs = require('fs')
 
 describe('Testing script fallbackDep.js', function () {
@@ -20,7 +18,6 @@ describe('Testing script fallbackDep.js', function () {
     // Run fallback dependancy script
     try {
       require(fallbackSandBox)()
-      require(sandBox05)()
     } catch (err) {
       console.log(err)
     }
