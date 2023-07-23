@@ -26,6 +26,7 @@ describe('Testing script fallbackDep.js', function () {
         done()
       }
     })
+    done()
   })
   // delete the test app Directory and start with a clean state after each test
   after(function (done) {
