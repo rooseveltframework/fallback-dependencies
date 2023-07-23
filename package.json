@@ -19,11 +19,7 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "cross-env": "7.0.3",
-    "execa": "^7.1.1",
-    "fs": "^0.0.1-security",
-    "fs-extra": "^11.1.1",
-    "nyc": "^15.1.0"
+    "cross-env": "7.0.3"
   },
   "devDependencies": {
     "c8": "8.0.0",
@@ -42,16 +38,16 @@
     ],
     "rules": {
       "mocha/no-exclusive-tests": "error"
-    },
-    "mocha": {
-      "timeout": "60s"
     }
+  },
+  "mocha": {
+    "timeout": "200000ms"
   },
   "scripts": {
     "codecov": "codecov",
-    "coverage": "c8 --reporter=text --reporter=lcov  mocha test/*.js",
+    "coverage": "c8 --reporter=text --reporter=lcov  mocha test/*.js --test",
     "lint": "standard && eslint test/test.js",
-    "test": "nyc mocha test/*.js",
+    "test": "mocha test/*.js",
     "test-debug": "mocha --inspect-brk test/*.js"
   },
   "repository": {
