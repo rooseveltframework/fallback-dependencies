@@ -64,7 +64,7 @@ describe('Testing script fallbackDep.js', function () {
     assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6/lib')) === false, './clones/repo4/lib/fallback-deps-test-repo-5/lib/fallback-deps-test-repo-6/lib does exist')
   })
 
-  it('Testing if `fallback-dependencies` still works if the repo is not a direct dependency of the root project, append the `:directOnly`', function () {
+  it('should create intended files using directOnly feature', function () {
     require(appendingDirectOnly)()
     assert(fs.existsSync(path.join(__dirname, './clones/repo7/lib')) === true, './clones/repo7/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo7/lib/fallback-deps-test-repo-8')) === true, './clones/repo7/lib/fallback-deps-test-repo-8 does not exist')
