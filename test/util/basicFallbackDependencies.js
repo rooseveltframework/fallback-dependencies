@@ -17,6 +17,14 @@ function fallbackDependancySandBox (appDir) {
     appDir = processEnv
   }
 
+  if (fs.existsSync(`${testSrc}/repos`)) {
+    fs.rmSync(`${testSrc}/repos`, { recursive: true, force: true })
+  }
+  // Checks if the clone folder exist, if not it creates it
+  if (fs.existsSync(`${testSrc}/clones`)) {
+    fs.rmSync(`${testSrc}/clones`, { recursive: true, force: true })
+  }
+
   // Checks if the repos folder exist, if not it creates it
   try {
     if (!fs.existsSync(`${testSrc}/repos`)) {
