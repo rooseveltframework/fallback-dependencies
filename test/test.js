@@ -44,7 +44,6 @@ describe('Testing script fallbackDep.js', function () {
 
   it('Testing if `fallback-dependencies`  works and creates all files intended', function () {
     require(basicFallbackDependencies)()
-    require(desiredVersion)()
     assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib')) === true, './clones/repo1/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2')) === true, './clones/repo1/lib/fallback-deps-test-repo-2 does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2/lib')) === true, './clones/repo1/lib/fallback-deps-test-repo-2/lib does not exist')
@@ -96,6 +95,12 @@ describe('Testing script fallbackDep.js', function () {
     assert(fs.existsSync(path.join(__dirname, './clones/repo19/lib')) === true, './clones/repo19/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo19/lib/fallback-deps-test-repo-20')) === true, './clones/repo19/lib/fallback-deps-test-repo-20 does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo19/lib/fallback-deps-test-repo-20/.git')) === true, './clones/repo19/lib/fallback-deps-test-repo-20/.git does not exist')
+  })
+
+  it('Testing if `fallback-dependencies` reclones the repo if the tag does not match the desired -b version number', function () {
+    require(desiredVersion)()
+    assert(fs.existsSync(path.join(__dirname, './clones/repo22/lib')) === true, './clones/repo22/lib does not exist')
+    assert(fs.existsSync(path.join(__dirname, './clones/repo22/lib/fallback-deps-test-repo-23')) === true, './clones/repo22/lib/fallback-deps-test-repo-23 does not exist')
   })
 
   it('Testing if `fallback-dependencies` does not update if  repos is not a git repo', function () {
