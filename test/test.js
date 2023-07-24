@@ -83,7 +83,7 @@ describe('Testing script fallbackDep.js', function () {
     assert(fs.existsSync(path.join(__dirname, './clones/repo13/lib/fallback-deps-test-repo-28')) === true, './clones/repo13/lib/fallback-deps-test-repo-28 does not exist')
   })
 
-  it('Testing if skip installing dependencies for a specific fallback-dependency by using ` -skip-deps` works', function () {
+  it('should skip installing dependencies for a specific fallback-dependency if the -skip-deps feature is present', function () {
     require(specificFallbackDependency)()
     assert(fs.existsSync(path.join(__dirname, './clones/repo16/lib')) === true, './clones/repo16/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo16/lib/fallback-deps-test-repo-17')) === true, './clones/repo16/lib/fallback-deps-test-repo-17 does not exist')
