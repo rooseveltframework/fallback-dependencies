@@ -103,7 +103,7 @@ describe('Testing script fallbackDep.js', function () {
     assert(fs.existsSync(path.join(__dirname, './clones/repo22/lib/fallback-deps-test-repo-23')) === true, './clones/repo22/lib/fallback-deps-test-repo-23 does not exist')
   })
 
-  it('Testing if `fallback-dependencies` does not update if  repos is not a git repo', function () {
+  it('should skip any folder that is not a git repo', function () {
     require(notAGitRepo)()
     assert(fs.existsSync(path.join(__dirname, './clones/repo25/lib')) === true, './clones/repo25/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo25/lib/fallback-deps-test-repo-26')) === true, './clones/repo19/lib/fallback-deps-test-repo-20 does not exist')
