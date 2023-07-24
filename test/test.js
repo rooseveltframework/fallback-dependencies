@@ -42,7 +42,7 @@ describe('Testing script fallbackDep.js', function () {
     })
   })
 
-  it('Testing if `fallback-dependencies`  works and creates all files intended', function () {
+  it('should create all files intended', function () {
     require(basicFallbackDependencies)()
     assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib')) === true, './clones/repo1/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2')) === true, './clones/repo1/lib/fallback-deps-test-repo-2 does not exist')
