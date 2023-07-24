@@ -173,12 +173,12 @@ function fallbackDependancySandBox (appDir) {
       // Change directory path run git command
       execSync('git --bare init', {
         stdio: 'pipe', // hide output from git
-        cwd: path.resolve(`${testSrc}/repos/${repoList[id]}`, '') // where we're cloning the repo to
+        cwd: path.normalize(`${testSrc}/repos/${repoList[id]}`, '') // where we're cloning the repo to
       })
       // Change directory path run git command
-      execSync(`git clone ${testSrc}/repos/${repoList[id]}`, {
+      execSync(`git clone "${testSrc}/repos/${repoList[id]}"`, {
         stdio: 'pipe', // hide output from git
-        cwd: path.resolve(`${testSrc}/clones`, '') // where we're cloning the repo to
+        cwd: path.normalize(`${testSrc}/clones`, '') // where we're cloning the repo to
       })
       if (repoList[id] === 'repo13') {
         fs.writeFileSync(`${testSrc}/clones/repo13/reposFile.json`, JSON.stringify(repo13FileData))
@@ -192,18 +192,18 @@ function fallbackDependancySandBox (appDir) {
       // Run git command to push package and package-lock files
       execSync('git add .', {
         stdio: 'pipe', // hide output from git
-        cwd: path.resolve(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
+        cwd: path.normalize(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
       })
       execSync('git commit -m "commit"', {
         stdio: 'pipe', // hide output from git
-        cwd: path.resolve(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
+        cwd: path.normalize(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
       })
       execSync('git push', {
         stdio: 'pipe', // hide output from git
-        cwd: path.resolve(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
+        cwd: path.normalize(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
       })
       if (repoList[id] === 'repo13') {
-        fs.rmSync(path.resolve(`${testSrc}/clones/repo14` + '/.git/config'), { recursive: true, force: true })
+        fs.rmSync(path.normalize(`${testSrc}/clones/repo14` + '/.git/config'), { recursive: true, force: true })
       }
     }
     fs.mkdirSync(`${testSrc}/repos/repo28`, err => {
@@ -216,12 +216,12 @@ function fallbackDependancySandBox (appDir) {
       // Change directory path run git command
       execSync('git --bare init', {
         stdio: 'pipe', // hide output from git
-        cwd: path.resolve(`${testSrc}/repos/repo28`, '') // where we're cloning the repo to
+        cwd: path.normalize(`${testSrc}/repos/repo28`, '') // where we're cloning the repo to
       })
       // Change directory path run git command
-      execSync(`git clone ${testSrc}/repos/repo28`, {
+      execSync(`git clone "${testSrc}/repos/repo28"`, {
         stdio: 'pipe', // hide output from git
-        cwd: path.resolve(`${testSrc}/clones`, '') // where we're cloning the repo to
+        cwd: path.normalize(`${testSrc}/clones`, '') // where we're cloning the repo to
       })
     } catch {}
     fs.writeFileSync(`${testSrc}/clones/repo28/package.json`, JSON.stringify(repo28Package))
@@ -229,11 +229,11 @@ function fallbackDependancySandBox (appDir) {
 
     execSync('npm ci', {
       stdio: 'pipe', // hide output from git
-      cwd: path.resolve(`${testSrc}/clones/repo13`, '') // where we're cloning the repo to
+      cwd: path.normalize(`${testSrc}/clones/repo13`, '') // where we're cloning the repo to
     })
     execSync('npm ci', {
       stdio: 'pipe', // hide output from git
-      cwd: path.resolve(`${testSrc}/clones/repo13`, '') // where we're cloning the repo to
+      cwd: path.normalize(`${testSrc}/clones/repo13`, '') // where we're cloning the repo to
     })
   } catch {}
 }

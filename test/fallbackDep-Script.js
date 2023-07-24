@@ -4,15 +4,15 @@ const cleanupTestApp = require('./util/cleanupTestApp')
 
 const path = require('path')
 const appDir = path.join(__dirname, 'app/paramFunctionTest')
-const sandBox01 = path.join(__dirname, './util/fallbackSB01.js')
-const sandBox02 = path.join(__dirname, './util/fallbackSB02.js')
-const sandBox03 = path.join(__dirname, './util/fallbackSB03.js')
-const sandBox04 = path.join(__dirname, './util/fallbackSB04.js')
-const sandBox05 = path.join(__dirname, './util/fallbackSB05.js')
-const sandBox06 = path.join(__dirname, './util/fallbackSB06.js')
-const sandBox07 = path.join(__dirname, './util/fallbackSB07.js')
-const sandBox08 = path.join(__dirname, './util/fallbackSB08.js')
-const sandBox09 = path.join(__dirname, './util/fallbackSB09.js')
+const basicFallbackDependencies = path.join(__dirname, './util/basicFallbackDependencies.js')
+const reposFileInUse = path.join(__dirname, './util/reposFileInUse.js')
+const appendingDirectOnly = path.join(__dirname, './util/appendingDirectOnly.js')
+const ifRepoAlreadyExists = path.join(__dirname, './util/ifRepoAlreadyExists.js')
+const createGitPullRrror = path.join(__dirname, './util/createGitPullRrror.js')
+const specificFallbackDependency = path.join(__dirname, './util/specificFallbackDependency.js')
+const cloneingSpecificGitTag = path.join(__dirname, './util/cloneingSpecificGitTag.js')
+const desiredVersion = path.join(__dirname, './util/desiredVersion.js')
+const notAGitRepo = path.join(__dirname, './util/notAGitRepo.js')
 
 const fs = require('fs')
 
@@ -26,13 +26,12 @@ describe('Testing script fallbackDep.js', function () {
         done()
       }
     })
-    done()
   })
   // delete the test app Directory and start with a clean state after each test
   after(function (done) {
     //  Delete repos and clones file after running test
-    fs.rmSync(path.resolve('./test/clones'), { recursive: true, force: true })
-    fs.rmSync(path.resolve('./test/repos'), { recursive: true, force: true })
+    fs.rmSync(path.normalize('./test/clones'), { recursive: true, force: true })
+    fs.rmSync(path.normalize('./test/repos'), { recursive: true, force: true })
 
     cleanupTestApp(appDir, (err) => {
       if (err) {
@@ -44,8 +43,8 @@ describe('Testing script fallbackDep.js', function () {
   })
 
   it('Testing if `fallback-dependencies`  works and creates all files intended', function () {
-    require(sandBox01)()
-    require(sandBox08)()
+    require(basicFallbackDependencies)()
+    require(desiredVersion)()
     assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib')) === true, './clones/repo1/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2')) === true, './clones/repo1/lib/fallback-deps-test-repo-2 does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2/lib')) === true, './clones/repo1/lib/fallback-deps-test-repo-2/lib does not exist')
@@ -56,7 +55,7 @@ describe('Testing script fallbackDep.js', function () {
   })
 
   it('Testing if `fallback-dependencies` still works if repos is non-presence and replaced with reposFile', function () {
-    require(sandBox02)()
+    require(reposFileInUse)()
     assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib')) === true, './clones/repo4/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib/fallback-deps-test-repo-5')) === true, './clones/repo4/lib/fallback-deps-test-repo-5 does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo4/lib/fallback-deps-test-repo-5/lib')) === true, './clones/repo4/lib/fallback-deps-test-repo-5/lib does not exist')
@@ -67,40 +66,40 @@ describe('Testing script fallbackDep.js', function () {
   })
 
   it('Testing if `fallback-dependencies` still works if the repo is not a direct dependency of the root project, append the `:directOnly`', function () {
-    require(sandBox03)()
+    require(appendingDirectOnly)()
     assert(fs.existsSync(path.join(__dirname, './clones/repo7/lib')) === true, './clones/repo7/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo7/lib/fallback-deps-test-repo-8')) === true, './clones/repo7/lib/fallback-deps-test-repo-8 does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo7/lib/fallback-deps-test-repo-8/lib')) === true, './clones/repo7/lib/fallback-deps-test-repo-8/lib does not exist')
   })
 
   it('Testing if `fallback-dependencies` still works if the repo already exists', function () {
-    require(sandBox04)()
+    require(ifRepoAlreadyExists)()
     assert(fs.existsSync(path.join(__dirname, './clones/repo10/lib')) === true, './clones/repo10/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo10/lib/fallback-deps-test-repo-11')) === true, './clones/repo10/lib/fallback-deps-test-repo-11 does not exist')
   })
 
   it('Testing if `fallback-dependencies` still works if there is a git pull error!', function () {
-    require(sandBox05)()
+    require(createGitPullRrror)()
     assert(fs.existsSync(path.join(__dirname, './clones/repo13/lib')) === true, './clones/repo13/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo13/lib/fallback-deps-test-repo-28')) === true, './clones/repo13/lib/fallback-deps-test-repo-28 does not exist')
   })
 
   it('Testing if skip installing dependencies for a specific fallback-dependency by using ` -skip-deps` works', function () {
-    require(sandBox06)()
+    require(specificFallbackDependency)()
     assert(fs.existsSync(path.join(__dirname, './clones/repo16/lib')) === true, './clones/repo16/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo16/lib/fallback-deps-test-repo-17')) === true, './clones/repo16/lib/fallback-deps-test-repo-17 does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo16/lib/fallback-deps-test-repo-17/.git')) === true, './clones/repo16/lib/fallback-deps-test-repo-17/.git does not exist')
   })
 
   it('Checking to see if  cloneing a specific git tag by using add `-b tag_name` works', function () {
-    require(sandBox07)()
+    require(cloneingSpecificGitTag)()
     assert(fs.existsSync(path.join(__dirname, './clones/repo19/lib')) === true, './clones/repo19/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo19/lib/fallback-deps-test-repo-20')) === true, './clones/repo19/lib/fallback-deps-test-repo-20 does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo19/lib/fallback-deps-test-repo-20/.git')) === true, './clones/repo19/lib/fallback-deps-test-repo-20/.git does not exist')
   })
 
   it('Testing if `fallback-dependencies` does not update if  repos is not a git repo', function () {
-    require(sandBox09)()
+    require(notAGitRepo)()
     assert(fs.existsSync(path.join(__dirname, './clones/repo25/lib')) === true, './clones/repo25/lib does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo25/lib/fallback-deps-test-repo-26')) === true, './clones/repo19/lib/fallback-deps-test-repo-20 does not exist')
     assert(fs.existsSync(path.join(__dirname, './clones/repo25/lib/fallback-deps-test-repo-26/.git')) === false, './clones/repo25/lib/fallback-deps-test-repo-26/.git does exist')

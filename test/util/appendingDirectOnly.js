@@ -5,7 +5,7 @@ function fallbackDependancySandBox (appDir) {
   const path = require('path')
   const testSrc = path.resolve(__dirname, '../../test')
   const { execSync } = require('child_process')
-  const repoList = ['repo25', 'repo26', 'repo27']
+  const repoList = ['repo7', 'repo8', 'repo9']
 
   if (!appDir) {
     let processEnv
@@ -39,7 +39,7 @@ function fallbackDependancySandBox (appDir) {
       })
     }
 
-    const repo25Package = {
+    const repo7Package = {
       devDependencies: {
         'fallback-dependencies': '../../../'
       },
@@ -51,8 +51,8 @@ function fallbackDependancySandBox (appDir) {
         postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
       }
     }
-    const repo25PackageLocked = {
-      name: 'repo25',
+    const repo7PackageLocked = {
+      name: 'repo7',
       lockfileVersion: 3,
       requires: true,
       packages: {
@@ -65,7 +65,7 @@ function fallbackDependancySandBox (appDir) {
         '../../..': {
           version: '0.1.0',
           dev: true,
-          license: 'CC-BY-25.0',
+          license: 'CC-BY-7.0',
           devDependencies: {}
         },
         'node_modules/fallback-dependencies': {
@@ -74,27 +74,28 @@ function fallbackDependancySandBox (appDir) {
         }
       }
     }
-    const repo25FileData = {
-      'fallback-deps-test-repo-26': [
-        '../../../repos/repo26'
+    const repo7FileData = {
+      'fallback-deps-test-repo-8': [
+        '../../../repos/repo8'
       ]
     }
-    const repo26Package = {
+    const repo8Package = {
       devDependencies: {
-        'fallback-dependencies': '../../../../../../'
+        'fallback-dependencies': '../../../../../'
       },
       fallbackDependencies: {
         dir: 'lib',
         repos: {
-          'fallback-deps-test-repo-27': '../../../../../repos/repo27'
-        }
+          'fallback-deps-test-repo-9:directOnly': '../../../../../repos/repo9'
+        },
+        reposFile: 'reposFile.json'
       },
       scripts: {
         postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
       }
     }
-    const repo26PackageLocked = {
-      name: 'repo25',
+    const repo8PackageLocked = {
+      name: 'repo7',
       lockfileVersion: 3,
       requires: true,
       packages: {
@@ -107,7 +108,7 @@ function fallbackDependancySandBox (appDir) {
         '../../../../..': {
           version: '0.1.0',
           dev: true,
-          license: 'CC-BY-25.0',
+          license: 'CC-BY-7.0',
           devDependencies: {}
         },
         'node_modules/fallback-dependencies': {
@@ -116,14 +117,15 @@ function fallbackDependancySandBox (appDir) {
         }
       }
     }
-    const repo27Package = {}
-    const repo27PackageLocked = {
-      name: 'repo27',
+    const repo9Package = {}
+    const repo9PackageLocked = {
+      name: 'repo9',
       lockfileVersion: 3,
       requires: true,
       packages: {}
     }
-    const packageList = [[repo25Package, repo25PackageLocked], [repo26Package, repo26PackageLocked], [repo27Package, repo27PackageLocked]]
+
+    const packageList = [[repo7Package, repo7PackageLocked], [repo8Package, repo8PackageLocked], [repo9Package, repo9PackageLocked]]
     for (const id in repoList) {
       if (!fs.existsSync(`${testSrc}/repos/${repoList[id]}/`)) {
         fs.mkdirSync(`${testSrc}/repos/${repoList[id]}/`, err => {
@@ -136,62 +138,39 @@ function fallbackDependancySandBox (appDir) {
       // Change directory path run git command
       execSync('git --bare init', {
         stdio: 'pipe', // hide output from git
-        cwd: path.resolve(`${testSrc}/repos/${repoList[id]}`, '') // where we're cloning the repo to
+        cwd: path.normalize(`${testSrc}/repos/${repoList[id]}`, '') // where we're cloning the repo to
       })
       // Change directory path run git command
-      execSync(`git clone ${testSrc}/repos/${repoList[id]}`, {
+      execSync(`git clone "${testSrc}/repos/${repoList[id]}"`, {
         stdio: 'pipe', // hide output from git
-        cwd: path.resolve(`${testSrc}/clones`, '') // where we're cloning the repo to
+        cwd: path.normalize(`${testSrc}/clones`, '') // where we're cloning the repo to
       })
-      if (repoList[id] === 'repo25') {
-        fs.writeFileSync(`${testSrc}/clones/repo25/reposFile.json`, JSON.stringify(repo25FileData))
+      if (repoList[id] === 'repo7') {
+        fs.writeFileSync(`${testSrc}/clones/repo7/reposFile.json`, JSON.stringify(repo7FileData))
       }
       // Change directory path
       process.chdir(`${testSrc}/clones/${repoList[id]}`)
       // Create the package.json and package-lock.json file in the ./clones/..
       fs.writeFileSync(`${testSrc}/clones/${repoList[id]}/package.json`, JSON.stringify(packageList[id][0]))
       fs.writeFileSync(`${testSrc}/clones/${repoList[id]}/package-lock.json`, JSON.stringify(packageList[id][1]))
+
       // Run git command to push package and package-lock files
       execSync('git add .', {
         stdio: 'pipe', // hide output from git
-        cwd: path.resolve(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
+        cwd: path.normalize(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
       })
       execSync('git commit -m "commit"', {
         stdio: 'pipe', // hide output from git
-        cwd: path.resolve(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
+        cwd: path.normalize(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
       })
       execSync('git push', {
         stdio: 'pipe', // hide output from git
-        cwd: path.resolve(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
+        cwd: path.normalize(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
       })
     }
-
     execSync('npm ci', {
       stdio: 'pipe', // hide output from git
-      cwd: path.resolve(`${testSrc}/clones/repo25`, '') // where we're cloning the repo to
-    })
-
-    fs.rmSync(path.resolve(`${testSrc}/repos/repo26/config`), { recursive: true, force: true })
-    fs.rmSync(path.resolve(`${testSrc}/clones/repo26/.git`), { recursive: true, force: true })
-
-    fs.rmSync(path.resolve(`${testSrc}/clones/repo25/lib/fallback-deps-test-repo-26/.git`), { recursive: true, force: true })
-    try {
-      execSync('git add .', {
-        stdio: 'pipe', // hide output from git
-        cwd: path.resolve(`${testSrc}/clones/repo25`, '') // where we're cloning the repo to
-      })
-      execSync('git commit -m "commit"', {
-        stdio: 'pipe', // hide output from git
-        cwd: path.resolve(`${testSrc}/clones/repo25`, '') // where we're cloning the repo to
-      })
-      execSync('git push', {
-        stdio: 'pipe', // hide output from git
-        cwd: path.resolve(`${testSrc}/clones/repo25`, '') // where we're cloning the repo to
-      })
-    } catch {}
-    execSync('npm ci', {
-      stdio: 'pipe', // hide output from git
-      cwd: path.resolve(`${testSrc}/clones/repo25`, '') // where we're cloning the repo to
+      cwd: path.normalize(`${testSrc}/clones/repo7`, '') // where we're cloning the repo to
     })
   } catch {}
 }
