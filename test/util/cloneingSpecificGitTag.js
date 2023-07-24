@@ -5,7 +5,7 @@ function fallbackDependancySandBox (appDir) {
   const path = require('path')
   const testSrc = path.resolve(__dirname, '../../test')
   const { execSync } = require('child_process')
-  const repoList = ['repo19', 'repo20', 'repo21']
+  const repoList = ['repo1', 'repo2', 'repo3']
 
   if (!appDir) {
     let processEnv
@@ -39,7 +39,7 @@ function fallbackDependancySandBox (appDir) {
       })
     }
 
-    const repo19Package = {
+    const repo1Package = {
       devDependencies: {
         'fallback-dependencies': '../../../'
       },
@@ -51,8 +51,8 @@ function fallbackDependancySandBox (appDir) {
         postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
       }
     }
-    const repo19PackageLocked = {
-      name: 'repo19',
+    const repo1PackageLocked = {
+      name: 'repo1',
       lockfileVersion: 3,
       requires: true,
       packages: {
@@ -65,7 +65,7 @@ function fallbackDependancySandBox (appDir) {
         '../../..': {
           version: '0.1.0',
           dev: true,
-          license: 'CC-BY-19.0',
+          license: 'CC-BY-1.0',
           devDependencies: {}
         },
         'node_modules/fallback-dependencies': {
@@ -74,27 +74,27 @@ function fallbackDependancySandBox (appDir) {
         }
       }
     }
-    const repo19FileData = {
-      'fallback-deps-test-repo-20': [
-        'https://github.com/rooseveltframework/generator-roosevelt.git -b 0.21.7', 'https://githu.com/rooseveltframework/roosevelt.git -b 0.21.12'
+    const repo1FileData = {
+      'fallback-deps-test-repo-2': [
+        'https://github.com/rooseveltframework/generator-roosevelt.git -b 0.3.7', 'https://githu.com/rooseveltframework/roosevelt.git -b 0.3.12'
       ]
     }
-    const repo20Package = {
+    const repo2Package = {
       devDependencies: {
         'fallback-dependencies': '../../../../../../'
       },
       fallbackDependencies: {
         dir: 'lib',
         repos: {
-          'fallback-deps-test-repo-21': '../../../../../repos/repo21'
+          'fallback-deps-test-repo-3': '../../../../../repos/repo3'
         }
       },
       scripts: {
         postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
       }
     }
-    const repo20PackageLocked = {
-      name: 'repo19',
+    const repo2PackageLocked = {
+      name: 'repo1',
       lockfileVersion: 3,
       requires: true,
       packages: {
@@ -107,7 +107,7 @@ function fallbackDependancySandBox (appDir) {
         '../../../../..': {
           version: '0.1.0',
           dev: true,
-          license: 'CC-BY-19.0',
+          license: 'CC-BY-1.0',
           devDependencies: {}
         },
         'node_modules/fallback-dependencies': {
@@ -116,15 +116,15 @@ function fallbackDependancySandBox (appDir) {
         }
       }
     }
-    const repo21Package = {}
-    const repo21PackageLocked = {
-      name: 'repo21',
+    const repo3Package = {}
+    const repo3PackageLocked = {
+      name: 'repo3',
       lockfileVersion: 3,
       requires: true,
       packages: {}
     }
 
-    const packageList = [[repo19Package, repo19PackageLocked], [repo20Package, repo20PackageLocked], [repo21Package, repo21PackageLocked]]
+    const packageList = [[repo1Package, repo1PackageLocked], [repo2Package, repo2PackageLocked], [repo3Package, repo3PackageLocked]]
     for (const id in repoList) {
       if (!fs.existsSync(`${testSrc}/repos/${repoList[id]}/`)) {
         fs.mkdirSync(`${testSrc}/repos/${repoList[id]}/`, err => {
@@ -144,8 +144,8 @@ function fallbackDependancySandBox (appDir) {
         stdio: 'pipe', // hide output from git
         cwd: path.resolve(`${testSrc}/clones`, '') // where we're cloning the repo to
       })
-      if (repoList[id] === 'repo19') {
-        fs.writeFileSync(`${testSrc}/clones/repo19/reposFile.json`, JSON.stringify(repo19FileData))
+      if (repoList[id] === 'repo1') {
+        fs.writeFileSync(`${testSrc}/clones/repo1/reposFile.json`, JSON.stringify(repo1FileData))
       }
       // Change directory path
       process.chdir(`${testSrc}/clones/${repoList[id]}`)
@@ -169,11 +169,11 @@ function fallbackDependancySandBox (appDir) {
     }
     execSync('npm ci', {
       stdio: 'pipe', // hide output from git
-      cwd: path.resolve(`${testSrc}/clones/repo19`, '') // where we're cloning the repo to
+      cwd: path.resolve(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
     execSync('npm ci', {
       stdio: 'pipe', // hide output from git
-      cwd: path.resolve(`${testSrc}/clones/repo19`, '') // where we're cloning the repo to
+      cwd: path.resolve(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
   } catch {}
 }
