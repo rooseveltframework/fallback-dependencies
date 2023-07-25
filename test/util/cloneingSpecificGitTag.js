@@ -17,6 +17,14 @@ function fallbackDependancySandBox (appDir) {
     appDir = processEnv
   }
 
+  if (fs.existsSync(`${testSrc}/repos`)) {
+    fs.rmSync(`${testSrc}/repos`, { recursive: true, force: true })
+  }
+  // Checks if the clone folder exist, if not it creates it
+  if (fs.existsSync(`${testSrc}/clones`)) {
+    fs.rmSync(`${testSrc}/clones`, { recursive: true, force: true })
+  }
+
   // Checks if the repos folder exist, if not it creates it
   try {
     if (!fs.existsSync(`${testSrc}/repos`)) {
@@ -76,7 +84,7 @@ function fallbackDependancySandBox (appDir) {
     }
     const repo1FileData = {
       'fallback-deps-test-repo-2': [
-        'https://github.com/rooseveltframework/generator-roosevelt.git -b 0.3.7', 'https://githu.com/rooseveltframework/roosevelt.git -b 0.3.12'
+        'https://github.com/rooseveltframework/generator-roosevelt.git -b 0.21.7', 'https://githu.com/rooseveltframework/roosevelt.git -b 0.21.12'
       ]
     }
     const repo2Package = {
