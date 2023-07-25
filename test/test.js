@@ -1,9 +1,7 @@
 /* eslint-env mocha */
 const assert = require('assert')
-const cleanupTestApp = require('./util/cleanupTestApp')
 
 const path = require('path')
-const appDir = path.join(__dirname, 'app/paramFunctionTest')
 const basicFallbackDependencies = path.join(__dirname, './util/basicFallbackDependencies.js')
 const reposFileInUse = path.join(__dirname, './util/reposFileInUse.js')
 const appendingDirectOnly = path.join(__dirname, './util/appendingDirectOnly.js')
@@ -17,29 +15,11 @@ const notAGitRepo = path.join(__dirname, './util/notAGitRepo.js')
 const fs = require('fs')
 
 describe('Testing script fallbackDep.js', function () {
-  before(function (done) {
-    // Run fallback dependancy script
-    cleanupTestApp(appDir, (err) => {
-      if (err) {
-        throw err
-      } else {
-        done()
-      }
-    })
-  })
-
   // delete the test app Directory and start with a clean state after each test
   after(function (done) {
-    fs.rmSync(path.normalize('./test/clones'), { recursive: true, force: true })
-    fs.rmSync(path.normalize('./test/repos'), { recursive: true, force: true })
-
-    cleanupTestApp(appDir, (err) => {
-      if (err) {
-        throw err
-      } else {
-        done()
-      }
-    })
+    fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
+    fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
+    done()
   })
 
   it('should create all files intended', function () {

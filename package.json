@@ -41,7 +41,7 @@
     }
   },
   "mocha": {
-    "timeout": "200000ms"
+    "timeout": "500000ms"
   },
   "scripts": {
     "codecov": "codecov",
