@@ -13,8 +13,12 @@ const desiredVersion = path.join(__dirname, './util/desiredVersion.js')
 const notAGitRepo = path.join(__dirname, './util/notAGitRepo.js')
 
 const fs = require('fs')
-
 describe('Testing script fallbackDep.js', function () {
+  this.beforeEach(function (done) {
+    fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
+    fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
+    done()
+  })
   // delete the test app Directory and start with a clean state after each test
   after(function (done) {
     fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })

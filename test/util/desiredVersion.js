@@ -1,29 +1,11 @@
 module.exports = fallbackDependancySandBox
 
-function fallbackDependancySandBox (appDir) {
+function fallbackDependancySandBox () {
   const fs = require('fs')
   const path = require('path')
   const testSrc = path.resolve(__dirname, '../../test')
   const { execSync } = require('child_process')
   const repoList = ['repo1', 'repo2', 'repo3']
-
-  if (!appDir) {
-    let processEnv
-    if (fs.existsSync(path.join(process.cwd(), 'node_modules')) === false) {
-      processEnv = process.cwd()
-    } else {
-      processEnv = undefined
-    }
-    appDir = processEnv
-  }
-
-  if (fs.existsSync(`${testSrc}/repos`)) {
-    fs.rmSync(`${testSrc}/repos`, { recursive: true, force: true })
-  }
-  // Checks if the clone folder exist, if not it creates it
-  if (fs.existsSync(`${testSrc}/clones`)) {
-    fs.rmSync(`${testSrc}/clones`, { recursive: true, force: true })
-  }
 
   // Checks if the repos folder exist, if not it creates it
   try {
