@@ -21,7 +21,12 @@ module.exports = (listType) => {
     }
     repo1Package[listType] = {
       dir: 'lib',
-      reposFile: 'reposFile.json'
+      repos: {
+        'fallback-deps-test-repo-2': [
+          '../../../repos/repo2',
+          '../../../repos/repo3'
+        ]
+      }
     }
     const repo1PackageLock = {
       name: 'repo1',
@@ -36,7 +41,7 @@ module.exports = (listType) => {
         },
         '../../..': {
           version: '0.1.0',
-          license: 'CC-BY-1.0',
+          license: 'CC-BY-4.0',
           dependencies: {}
         },
         'node_modules/fallback-dependencies': {
@@ -45,14 +50,9 @@ module.exports = (listType) => {
         }
       }
     }
-    const repo1FileData = {
-      'fallback-deps-test-repo-2': [
-        '../../../repos/repo2', 'git://github.com/rooseveltframework/roosevelt.git -b 0.21.0 -skip-deps'
-      ]
-    }
     const repo2Package = {
       dependencies: {
-        'fallback-dependencies': '../../../../../../'
+        'fallback-dependencies': '../../../../../'
       },
       scripts: {
         postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
@@ -62,8 +62,7 @@ module.exports = (listType) => {
       dir: 'lib',
       repos: {
         'fallback-deps-test-repo-3': '../../../../../repos/repo3'
-      },
-      reposFile: 'reposFile.json'
+      }
     }
     const repo2PackageLock = {
       name: 'repo1',
@@ -78,7 +77,7 @@ module.exports = (listType) => {
         },
         '../../../../..': {
           version: '0.1.0',
-          license: 'CC-BY-1.0',
+          license: 'CC-BY-4.0',
           dependencies: {}
         },
         'node_modules/fallback-dependencies': {
@@ -94,7 +93,6 @@ module.exports = (listType) => {
       requires: true,
       packages: {}
     }
-
     const packageList = [[repo1Package, repo1PackageLock], [repo2Package, repo2PackageLock], [repo3Package, repo3PackageLock]]
     for (const id in repoList) {
       if (!fs.existsSync(`${testSrc}/repos/${repoList[id]}/`)) fs.mkdirSync(`${testSrc}/repos/${repoList[id]}/`)
@@ -106,7 +104,7 @@ module.exports = (listType) => {
         stdio: 'pipe', // hide output from git
         cwd: path.normalize(`${testSrc}/clones`, '') // where we're cloning the repo to
       })
-      if (repoList[id] === 'repo1') fs.writeFileSync(`${testSrc}/clones/repo1/reposFile.json`, JSON.stringify(repo1FileData))
+      if (repoList[id] === 'repo1') fs.mkdirSync(`${testSrc}/clones/repo1/lib`)
       process.chdir(`${testSrc}/clones/${repoList[id]}`)
       fs.writeFileSync(`${testSrc}/clones/${repoList[id]}/package.json`, JSON.stringify(packageList[id][0]))
       fs.writeFileSync(`${testSrc}/clones/${repoList[id]}/package-lock.json`, JSON.stringify(packageList[id][1]))

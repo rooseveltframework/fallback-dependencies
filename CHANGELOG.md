@@ -4,6 +4,12 @@
 
 - Put your changes here...
 
+## 1.0.0
+
+- Altered fallbackDependencies to no longer install devDependencies of a given repo. You can restore this behavior by declaring it in fallbackDevDependencies instead.
+- Added support for FALLBACK_DEPENDENCIES_PREFERRED_WILDCARD environment variable to move a preferred domain up to the top of list of fallback dependencies to try regardless of the order specified in the app's config.
+- Updated various dependencies.
+
 ## 0.1.6
 
 - Backed out `--omit=dev` change from 0.1.5 that prevented fallback-dependencies from installing devDependencies of a given repo.
