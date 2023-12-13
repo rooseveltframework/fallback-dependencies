@@ -38,11 +38,23 @@ Lastly, add a `postinstall` script to your npm scripts to execute the `fallback-
   },
 ```
 
+You can also write your `postinstall` script to fail silently if the fallback-dependencies.js file is not found for whatever reason, e.g.:
+
+```js
+  "scripts": {
+    "postinstall": "node -e \"try { require('node_modules/fallback-dependencies/fallback-dependencies.js') } catch (e) {}\""
+  },
+```
+
+By default, `fallback-dependencies` will not install the `devDependencies` of a given repo that is cloned. If you want to do so for any repo, put it in a `fallbackDevDependencies` block instead of a `fallbackDependencies` block in your `package.json`.
+
 To clone a specific git tag, add `-b tag_name` to the URL, e.g. `"https://some.private.git.repo.somewhere -b 1.0.5"`.
 
 To skip installing dependencies for a specific fallback-dependency, add ` -skip-deps` to the end of the URL string, e.g. `"https://some.private.git.repo.somewhere -b 1.0.5 -skip-deps"`
 
 To prevent a fallback-dependency from being installed in a situation where the repo is not a direct dependency of the root project, append the `:directOnly` flag to the end of the dependency name, e.g. `"some-private-dependency:directOnly": [ ... ] `.
+
+To move a preferred domain up to the top of list of fallback dependencies to try regardless of the order specified in the app's config, set the environment variable `FALLBACK_DEPENDENCIES_PREFERRED_WILDCARD` to a string to match in the URL list.
 
 ### API
 

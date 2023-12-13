@@ -47,7 +47,7 @@ module.exports = (listType) => {
     }
     const repo1FileData = {
       'fallback-deps-test-repo-2': [
-        '../../../repos/repo2', 'git://github.com/rooseveltframework/roosevelt.git -b 0.21.0 -skip-deps'
+        '../../../repos/repo2'
       ]
     }
     const repo2Package = {
@@ -62,8 +62,7 @@ module.exports = (listType) => {
       dir: 'lib',
       repos: {
         'fallback-deps-test-repo-3': '../../../../../repos/repo3'
-      },
-      reposFile: 'reposFile.json'
+      }
     }
     const repo2PackageLock = {
       name: 'repo1',
@@ -94,7 +93,6 @@ module.exports = (listType) => {
       requires: true,
       packages: {}
     }
-
     const packageList = [[repo1Package, repo1PackageLock], [repo2Package, repo2PackageLock], [repo3Package, repo3PackageLock]]
     for (const id in repoList) {
       if (!fs.existsSync(`${testSrc}/repos/${repoList[id]}/`)) fs.mkdirSync(`${testSrc}/repos/${repoList[id]}/`)
@@ -127,6 +125,23 @@ module.exports = (listType) => {
       stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
+    fs.rmSync(path.normalize(`${testSrc}/repos/repo2/config`), { recursive: true, force: true })
+    fs.rmSync(path.normalize(`${testSrc}/clones/repo2/.git`), { recursive: true, force: true })
+    fs.rmSync(path.normalize(`${testSrc}/clones/repo1/lib/fallback-deps-test-repo-2/.git`), { recursive: true, force: true })
+    try {
+      execSync('git add .', {
+        stdio: 'pipe', // hide output from git
+        cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
+      })
+      execSync('git commit -m "commit"', {
+        stdio: 'pipe', // hide output from git
+        cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
+      })
+      execSync('git push', {
+        stdio: 'pipe', // hide output from git
+        cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
+      })
+    } catch {}
     execSync('npm ci', {
       stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
