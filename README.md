@@ -42,7 +42,7 @@ You can also write your `postinstall` script to fail silently if the fallback-de
 
 ```js
   "scripts": {
-    "postinstall": "node -e \"try { require('node_modules/fallback-dependencies/fallback-dependencies.js') } catch (e) {}\""
+    "postinstall": "node -e \"try { require('child_process').execSync('node node_modules/fallback-dependencies/fallback-dependencies.js', { stdio: 'ignore' }) } catch (e) {}\""
   },
 ```
 
