@@ -133,7 +133,7 @@ function executeFallbackList (listType) {
           // do npm ci in the new dir only if package-lock exists and the don't install deps flag is not set
           if (fs.existsSync(fallbackDependenciesDir + '/' + dependency + '/package-lock.json') && !skipDeps) {
             console.log('Running npm ci on ' + fallbackDependenciesDir + '/' + dependency + '...')
-            const args = ['FALLBACK_DEPENDENCIES_INITIATED_COMMAND=true', 'npm', `ci`]
+            const args = ['FALLBACK_DEPENDENCIES_INITIATED_COMMAND=true', 'npm', 'ci']
             if (listType === 'fallbackDependencies') args.push('--omit=dev')
             spawnSync('cross-env', args, {
               stdio: [0, 1, 2], // display output from git
