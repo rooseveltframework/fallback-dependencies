@@ -102,7 +102,7 @@ module.exports = (listType) => {
         stdio: 'pipe', // hide output from git
         cwd: path.normalize(`${testSrc}/repos/${repoList[id]}`, '') // where we're cloning the repo to
       })
-      spawnSync('git', ['clone', `"${testSrc}/repos/${repoList[id]}"`], {
+      spawnSync('git', ['clone', `${testSrc}/repos/${repoList[id]}`], {
         stdio: 'pipe', // hide output from git
         cwd: path.normalize(`${testSrc}/clones`, '') // where we're cloning the repo to
       })
