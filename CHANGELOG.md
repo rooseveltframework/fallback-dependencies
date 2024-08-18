@@ -4,6 +4,11 @@
 
 - Put your changes here...
 
+## 1.0.1
+
+- Refactored some code to tighten some things up.
+- Updated various dependencies.
+
 ## 1.0.0
 
 - Altered fallbackDependencies to no longer install devDependencies of a given repo. You can restore this behavior by declaring it in fallbackDevDependencies instead.

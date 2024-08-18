@@ -1,6 +1,6 @@
 const fs = require('fs')
 const path = require('path')
-const { execSync } = require('child_process')
+const { spawnSync } = require('child_process')
 let pkgPath = process.argv[1] // full path of postinstall script being executed, presumably buried in node_modules in your app
 pkgPath = pkgPath.split('node_modules')[0] // take only the part preceding node_modules
 const pkg = require(pkgPath + 'package.json') // require the package.json in that folder
@@ -82,7 +82,8 @@ function executeFallbackList (listType) {
                 // update only if it's a direct match — same repo from the same place
                 console.log('Running git pull on ' + fallbackDependenciesDir + '/' + dependency + '...')
                 try {
-                  execSync('git pull', {
+                  spawnSync('git', ['pull'], {
+                    shell: false,
                     stdio: [0, 1, 2], // display output from git
                     cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                   })
@@ -101,7 +102,8 @@ function executeFallbackList (listType) {
                       break
                     }
                   }
-                  const output = execSync('git describe --tags', {
+                  const output = spawnSync('git', ['describe', '--tags'], {
+                    shell: false,
                     cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                   })
                   if (output.toString().trim() === version) {
@@ -123,16 +125,21 @@ function executeFallbackList (listType) {
           }
           // not updating, trying a fresh clone
           console.log('Trying to clone ' + url + ' ' + dependency)
-          execSync('git clone ' + url + ' ' + dependency, {
+          const args = ['clone']
+          args.push.apply(args, url.split(' '))
+          args.push.apply(args, dependency.split(' '))
+          spawnSync('git', args, {
+            shell: false,
             stdio: [0, 1, 2], // display output from git
             cwd: path.resolve(fallbackDependenciesDir, '') // where we're cloning the repo to
           })
           // do npm ci in the new dir only if package-lock exists and the don't install deps flag is not set
           if (fs.existsSync(fallbackDependenciesDir + '/' + dependency + '/package-lock.json') && !skipDeps) {
             console.log('Running npm ci on ' + fallbackDependenciesDir + '/' + dependency + '...')
-            let flags = ''
-            if (listType === 'fallbackDependencies') flags = ' --omit=dev'
-            execSync(`cross-env FALLBACK_DEPENDENCIES_INITIATED_COMMAND=true npm ci${flags}`, {
+            const args = ['FALLBACK_DEPENDENCIES_INITIATED_COMMAND=true', 'npm', 'ci']
+            if (listType === 'fallbackDependencies') args.push('--omit=dev')
+            spawnSync('cross-env', args, {
+              shell: false,
               stdio: [0, 1, 2], // display output from git
               cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
             })

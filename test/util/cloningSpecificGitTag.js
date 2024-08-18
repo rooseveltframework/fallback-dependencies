@@ -2,7 +2,7 @@ module.exports = (listType) => {
   const fs = require('fs')
   const path = require('path')
   const testSrc = path.resolve(__dirname, '../../test')
-  const { execSync } = require('child_process')
+  const { spawnSync } = require('child_process')
   const repoList = ['repo1', 'repo2', 'repo3']
 
   try {
@@ -97,11 +97,13 @@ module.exports = (listType) => {
     const packageList = [[repo1Package, repo1PackageLock], [repo2Package, repo2PackageLock], [repo3Package, repo3PackageLock]]
     for (const id in repoList) {
       if (!fs.existsSync(`${testSrc}/repos/${repoList[id]}/`)) fs.mkdirSync(`${testSrc}/repos/${repoList[id]}/`)
-      execSync('git --bare init', {
+      spawnSync('git', ['--bare', 'init'], {
+        shell: false,
         stdio: 'pipe', // hide output from git
         cwd: path.resolve(`${testSrc}/repos/${repoList[id]}`, '') // where we're cloning the repo to
       })
-      execSync(`git clone "${testSrc}/repos/${repoList[id]}"`, {
+      spawnSync('git', ['clone', `${testSrc}/repos/${repoList[id]}`], {
+        shell: false,
         stdio: 'pipe', // hide output from git
         cwd: path.resolve(`${testSrc}/clones`, '') // where we're cloning the repo to
       })
@@ -109,24 +111,29 @@ module.exports = (listType) => {
       process.chdir(`${testSrc}/clones/${repoList[id]}`)
       fs.writeFileSync(`${testSrc}/clones/${repoList[id]}/package.json`, JSON.stringify(packageList[id][0]))
       fs.writeFileSync(`${testSrc}/clones/${repoList[id]}/package-lock.json`, JSON.stringify(packageList[id][1]))
-      execSync('git add .', {
+      spawnSync('git', ['add', '.'], {
+        shell: false,
         stdio: 'pipe', // hide output from git
         cwd: path.resolve(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
       })
-      execSync('git commit -m "commit"', {
+      spawnSync('git', ['commit', '-m', '"commit"'], {
+        shell: false,
         stdio: 'pipe', // hide output from git
         cwd: path.resolve(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
       })
-      execSync('git push', {
+      spawnSync('git', ['push'], {
+        shell: false,
         stdio: 'pipe', // hide output from git
         cwd: path.resolve(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
       })
     }
-    execSync('npm ci', {
+    spawnSync('npm', ['ci'], {
+      shell: false,
       stdio: 'pipe', // hide output from git
       cwd: path.resolve(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
-    execSync('npm ci', {
+    spawnSync('npm', ['ci'], {
+      shell: false,
       stdio: 'pipe', // hide output from git
       cwd: path.resolve(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
