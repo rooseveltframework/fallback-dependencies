@@ -99,10 +99,12 @@ module.exports = () => {
     for (const id in repoList) {
       if (!fs.existsSync(`${testSrc}/repos/${repoList[id]}/`)) fs.mkdirSync(`${testSrc}/repos/${repoList[id]}/`)
       spawnSync('git', ['--bare', 'init'], {
+        shell: false,
         stdio: 'pipe', // hide output from git
         cwd: path.normalize(`${testSrc}/repos/${repoList[id]}`, '') // where we're cloning the repo to
       })
       spawnSync('git', ['clone', `${testSrc}/repos/${repoList[id]}`], {
+        shell: false,
         stdio: 'pipe', // hide output from git
         cwd: path.normalize(`${testSrc}/clones`, '') // where we're cloning the repo to
       })
@@ -111,19 +113,23 @@ module.exports = () => {
       fs.writeFileSync(`${testSrc}/clones/${repoList[id]}/package.json`, JSON.stringify(packageList[id][0]))
       fs.writeFileSync(`${testSrc}/clones/${repoList[id]}/package-lock.json`, JSON.stringify(packageList[id][1]))
       spawnSync('git', ['add', '.'], {
+        shell: false,
         stdio: 'pipe', // hide output from git
         cwd: path.normalize(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
       })
       spawnSync('git', ['commit', '-m', '"commit"'], {
+        shell: false,
         stdio: 'pipe', // hide output from git
         cwd: path.normalize(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
       })
       spawnSync('git', ['push'], {
+        shell: false,
         stdio: 'pipe', // hide output from git
         cwd: path.normalize(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
       })
     }
     spawnSync('npm', ['ci'], {
+      shell: false,
       stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })

@@ -83,6 +83,7 @@ function executeFallbackList (listType) {
                 console.log('Running git pull on ' + fallbackDependenciesDir + '/' + dependency + '...')
                 try {
                   spawnSync('git', ['pull'], {
+                    shell: false,
                     stdio: [0, 1, 2], // display output from git
                     cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                   })
@@ -102,6 +103,7 @@ function executeFallbackList (listType) {
                     }
                   }
                   const output = spawnSync('git', ['describe', '--tags'], {
+                    shell: false,
                     cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                   })
                   if (output.toString().trim() === version) {
@@ -127,6 +129,7 @@ function executeFallbackList (listType) {
           args.push.apply(args, url.split(' '))
           args.push.apply(args, dependency.split(' '))
           spawnSync('git', args, {
+            shell: false,
             stdio: [0, 1, 2], // display output from git
             cwd: path.resolve(fallbackDependenciesDir, '') // where we're cloning the repo to
           })
@@ -136,6 +139,7 @@ function executeFallbackList (listType) {
             const args = ['FALLBACK_DEPENDENCIES_INITIATED_COMMAND=true', 'npm', 'ci']
             if (listType === 'fallbackDependencies') args.push('--omit=dev')
             spawnSync('cross-env', args, {
+              shell: false,
               stdio: [0, 1, 2], // display output from git
               cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
             })
