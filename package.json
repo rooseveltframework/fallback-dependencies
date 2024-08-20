@@ -19,7 +19,6 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "cross-env": "7.0.3"
   },
   "devDependencies": {
     "c8": "10.1.2",

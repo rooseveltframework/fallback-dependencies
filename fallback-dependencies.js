@@ -139,14 +139,20 @@ function executeFallbackList (listType) {
           // do npm ci in the new dir only if package-lock exists and the don't install deps flag is not set
           if (fs.existsSync(fallbackDependenciesDir + '/' + dependency + '/package-lock.json') && !skipDeps) {
             console.log('Running npm ci on ' + fallbackDependenciesDir + '/' + dependency + '...')
-            const args = ['FALLBACK_DEPENDENCIES_INITIATED_COMMAND=true', 'npm', 'ci']
+            const args = ['ci']
             if (listType === 'fallbackDependencies') args.push('--omit=dev')
-            const output = spawnSync('cross-env', args, {
-              shell: false,
+            const output = spawnSync('npm', args, {
+              env: Object.assign(process.env, {
+                FALLBACK_DEPENDENCIES_INITIATED_COMMAND: true
+              }),
+              shell: true, // necessary to get npm in windows' PATH
               stdio: [0, 1, 2], // display output from git
               cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
             })
-            if (output.status !== 0) throw output
+            if (output.status !== 0) {
+              console.error(output)
+              console.error(`Fatal error: unable to install dependencies for: ${dependency}`)
+            }
           }
           break // if it successfully clones, skip trying the fallback
         } catch (e) {
