@@ -82,11 +82,12 @@ function executeFallbackList (listType) {
                 // update only if it's a direct match — same repo from the same place
                 console.log('Running git pull on ' + fallbackDependenciesDir + '/' + dependency + '...')
                 try {
-                  spawnSync('git', ['pull'], {
+                  const output = spawnSync('git', ['pull'], {
                     shell: false,
                     stdio: [0, 1, 2], // display output from git
                     cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                   })
+                  if (output.status !== 0) throw output
                 } catch (e) {
                   console.error('Cannot update ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' because of a git pull error!')
                 }
@@ -106,7 +107,8 @@ function executeFallbackList (listType) {
                     shell: false,
                     cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                   })
-                  if (output.toString().trim() === version) {
+                  if (output.status !== 0) throw output
+                  if (output.stdout.toString().trim() === version) {
                     console.log('Already up to date: ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' is already up to date because the commit\'s git tag matches the desired -b version number.')
                     break // stop checking fallbacks
                   } else {
@@ -128,21 +130,23 @@ function executeFallbackList (listType) {
           const args = ['clone']
           args.push.apply(args, url.split(' '))
           args.push.apply(args, dependency.split(' '))
-          spawnSync('git', args, {
+          const output = spawnSync('git', args, {
             shell: false,
             stdio: [0, 1, 2], // display output from git
             cwd: path.resolve(fallbackDependenciesDir, '') // where we're cloning the repo to
           })
+          if (output.status !== 0) throw output
           // do npm ci in the new dir only if package-lock exists and the don't install deps flag is not set
           if (fs.existsSync(fallbackDependenciesDir + '/' + dependency + '/package-lock.json') && !skipDeps) {
             console.log('Running npm ci on ' + fallbackDependenciesDir + '/' + dependency + '...')
             const args = ['FALLBACK_DEPENDENCIES_INITIATED_COMMAND=true', 'npm', 'ci']
             if (listType === 'fallbackDependencies') args.push('--omit=dev')
-            spawnSync('cross-env', args, {
+            const output = spawnSync('cross-env', args, {
               shell: false,
               stdio: [0, 1, 2], // display output from git
               cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
             })
+            if (output.status !== 0) throw output
           }
           break // if it successfully clones, skip trying the fallback
         } catch (e) {

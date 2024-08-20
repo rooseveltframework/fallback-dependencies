@@ -4,6 +4,12 @@
 
 - Put your changes here...
 
+## 1.0.2
+
+- Fixed bug causing old dependencies to be removed unnecessary.
+- Fixed fallbacks not working.
+- Updated various dependencies.
+
 ## 1.0.1
 
 - Refactored some code to tighten some things up.
