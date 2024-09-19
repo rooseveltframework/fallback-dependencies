@@ -8,7 +8,7 @@
       "url": "https://github.com/rooseveltframework/fallback-dependencies/graphs/contributors"
     }
   ],
-  "version": "1.0.2",
+  "version": "1.0.3",
   "files": [
     "fallback-dependencies.js"
   ],
@@ -23,10 +23,10 @@
   "devDependencies": {
     "c8": "10.1.2",
     "codecov": "3.8.3",
-    "eslint": "9.9.0",
+    "eslint": "9.10.0",
     "eslint-plugin-mocha": "10.5.0",
     "mocha": "10.7.3",
-    "standard": "17.1.0"
+    "standard": "17.1.2"
   },
   "eslintConfig": {
     "parserOptions": {
