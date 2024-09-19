@@ -4,6 +4,11 @@
 
 - Put your changes here...
 
+## 1.0.3
+
+- Fixed bug that resulted in hard to understand errors if `git` wasn't functioning properly on your system.
+- Updated various dependencies.
+
 ## 1.0.2
 
 - Fixed bug causing old dependencies to be removed unnecessary.
