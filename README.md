@@ -41,11 +41,11 @@ Next, add a `fallbackDependencies` entry to your `package.json` alongside your `
   "repos": {
     "some-private-dependency": [
       "https://some.private.git.repo.somewhere",
-      "https://some.private.git.repo.somewhere.else",
+      "https://some.private.git.repo.somewhere.else"
     ],
     "some-other-private-dependency": [
       "https://some.other.private.git.repo.somewhere",
-      "https://some.other.private.git.repo.somewhere.else",
+      "https://some.other.private.git.repo.somewhere.else"
     ]
   }
 }
@@ -72,11 +72,11 @@ Next, add a `fallbackDependencies` entry to your `package.json` alongside your `
     {
       "some-private-dependency": [
         "https://some.private.git.repo.somewhere",
-        "https://some.private.git.repo.somewhere.else",
+        "https://some.private.git.repo.somewhere.else"
       ],
       "some-other-private-dependency": [
         "https://some.other.private.git.repo.somewhere",
-        "https://some.other.private.git.repo.somewhere.else",
+        "https://some.other.private.git.repo.somewhere.else"
       ]
     }
     ```
