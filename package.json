@@ -1,6 +1,6 @@
 {
   "name": "fallback-dependencies",
-  "description": "A Node.js module that allows you to add git repo dependencies to your Node.js app from a cascading list of fallback locations.",
+  "description": "📦 Add git repo dependencies to your Node.js app from a cascading list of fallback locations.",
   "author": "Roosevelt Framework Team <rooseveltframework@gmail.com>",
   "contributors": [
     {
@@ -22,30 +22,15 @@
   },
   "devDependencies": {
     "c8": "10.1.3",
-    "codecov": "3.8.3",
-    "eslint": "9.17.0",
-    "eslint-plugin-mocha": "10.5.0",
-    "mocha": "11.0.1",
+    "mocha": "11.1.0",
     "standard": "17.1.2"
-  },
-  "eslintConfig": {
-    "parserOptions": {
-      "ecmaVersion": 2020
-    },
-    "plugins": [
-      "mocha"
-    ],
-    "rules": {
-      "mocha/no-exclusive-tests": "error"
-    }
   },
   "mocha": {
     "timeout": "500000ms"
   },
   "scripts": {
-    "codecov": "codecov",
     "coverage": "c8 --reporter=text --reporter=lcov mocha test/*.js --test",
-    "lint": "standard && eslint test/test.js",
+    "lint": "standard",
     "lint-fix": "standard --fix",
     "test": "mocha test/*.js",
     "test-debug": "mocha --inspect-brk test/*.js"

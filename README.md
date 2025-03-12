@@ -1,7 +1,7 @@
 # fallback-dependencies
 
 [![Build Status](https://github.com/rooseveltframework/fallback-dependencies/workflows/CI/badge.svg
-)](https://github.com/rooseveltframework/fallback-dependencies/actions?query=workflow%3ACI) [![codecov](https://codecov.io/gh/rooseveltframework/fallback-dependencies/branch/master/graph/badge.svg)](https://codecov.io/gh/rooseveltframework/fallback-dependencies) [![npm](https://img.shields.io/npm/v/fallback-dependencies.svg)](https://www.npmjs.com/package/fallback-dependencies)
+)](https://github.com/rooseveltframework/fallback-dependencies/actions?query=workflow%3ACI) [![npm](https://img.shields.io/npm/v/fallback-dependencies.svg)](https://www.npmjs.com/package/fallback-dependencies)
 
 A Node.js module that allows you to add git repo dependencies to your Node.js app from a cascading list of fallback locations. This module was built and is maintained by the [Roosevelt web framework](https://github.com/rooseveltframework/roosevelt) [team](https://github.com/orgs/rooseveltframework/people), but it can be used independently of Roosevelt as well.
 
@@ -97,7 +97,7 @@ You can also write your `postinstall` script to fail silently if the fallback-de
 
 ```js
 "scripts": {
-  "postinstall": "node -e \"try { require('child_process').spawnSync('node', ['node_modules/fallback-dependencies/fallback-dependencies.js'], { stdio: 'ignore' }) } catch (e) {}\""
+  "postinstall": "node -e \"try { require('child_process').spawnSync('node', ['node_modules/fallback-dependencies/fallback-dependencies.js'], { shell: false, stdio: 'ignore' }) } catch (e) {}\""
 },
 ```
 
