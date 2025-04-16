@@ -1,15 +1,22 @@
-# fallback-dependencies
+[![npm](https://img.shields.io/npm/v/fallback-dependencies.svg)](https://www.npmjs.com/package/fallback-dependencies)
 
-[![Build Status](https://github.com/rooseveltframework/fallback-dependencies/workflows/CI/badge.svg
-)](https://github.com/rooseveltframework/fallback-dependencies/actions?query=workflow%3ACI) [![npm](https://img.shields.io/npm/v/fallback-dependencies.svg)](https://www.npmjs.com/package/fallback-dependencies)
+A Node.js module that allows you to add git repo dependencies to your Node.js app from a cascading list of fallback locations.
 
-A Node.js module that allows you to add git repo dependencies to your Node.js app from a cascading list of fallback locations. This module was built and is maintained by the [Roosevelt web framework](https://github.com/rooseveltframework/roosevelt) [team](https://github.com/orgs/rooseveltframework/people), but it can be used independently of Roosevelt as well.
+This module was built and is maintained by the [Roosevelt web framework](https://rooseveltframework.org) [team](https://rooseveltframework.org/contributors), but it can be used independently of Roosevelt as well.
+
+<details open>
+  <summary>Documentation</summary>
+  <ul>
+    <li><a href="./USAGE.md">Usage</a></li>
+    <li><a href="./CONFIGURATION.md">CONFIGURATION</a></li>
+  </ul>
+</details>
 
 ## Why?
 
 You might be wondering: why not use a private npm registry, let npm clone git repos directly, or use some other package manager?
 
-Here are some reasons why the fallback-dependencies technique might work out better for your app:
+Here are some reasons why you might need fallback-dependencies for certain types of apps:
 
 - Private npm registries can be difficult to set up and maintain. But private git repos are easy to setup and maintain.
 - Installing dependencies of an app that uses a private npm registry adds extra steps to your build process which can be fussy for your app's users to configure correctly.
@@ -27,105 +34,7 @@ That's it. The app will start now. All the alternative approaches add additional
 
 So if you want to minimize the number of steps that need to be followed to install private dependencies in your Node.js app, then you might want to consider using `fallback-dependencies`.
 
-## Usage
-
-First declare `fallback-dependencies` as a dependency of your app.
-
-### Declare fallback-dependencies
-
-Next, add a `fallbackDependencies` entry to your `package.json` alongside your `dependencies`, `devDependencies`, etc, e.g.:
-
-```js
-"fallbackDependencies": {
-  "dir": "lib",
-  "repos": {
-    "some-private-dependency": [
-      "https://some.private.git.repo.somewhere",
-      "https://some.private.git.repo.somewhere.else"
-    ],
-    "some-other-private-dependency": [
-      "https://some.other.private.git.repo.somewhere",
-      "https://some.other.private.git.repo.somewhere.else"
-    ]
-  }
-}
-```
-
-#### API
-
-- `dir` *[String]*: What directory to deposit fallback-dependencies into.
-
-  - Default: `fallback_dependencies`.
-
-- `repos` *[Object]* of *[Arrays]* of *[Strings]*: A list of dependencies similar to the `dependencies` field in package.json, but instead of supplying a string for where to fetch it, you supply an array of strings of possible locations to fetch it from. This script will attempt to fetch it from the first location, then if that fails will fallback to the second possible place to get it from, and so on until it runs out of places to try.
-
-  - Default: `{}`.
-
-- `reposFile` *[String]*: Relative path to a JSON file that contains a list of repos formatted the same as the `repos` entry. If both `repos` and `reposFile` are supplied, the two lists will be merged.
-
-  - Default: `{}`.
-
-  - Example:
-
-    ```js
-    // fallback-dependencies.json
-    {
-      "some-private-dependency": [
-        "https://some.private.git.repo.somewhere",
-        "https://some.private.git.repo.somewhere.else"
-      ],
-      "some-other-private-dependency": [
-        "https://some.other.private.git.repo.somewhere",
-        "https://some.other.private.git.repo.somewhere.else"
-      ]
-    }
-    ```
-
-All params are optional, but the module won't do anything unless you supply at least `repos` or `reposFile`.
-
-### Fetch fallback-dependencies with a postinstall script
-
-Lastly, add a `postinstall` script to your npm scripts to execute the `fallback-dependencies` script after you install other dependencies:
-
-```js
-"scripts": {
-  "postinstall": "node node_modules/fallback-dependencies/fallback-dependencies.js"
-},
-```
-
-You can also write your `postinstall` script to fail silently if the fallback-dependencies.js file is not found for whatever reason, e.g.:
-
-```js
-"scripts": {
-  "postinstall": "node -e \"try { require('child_process').spawnSync('node', ['node_modules/fallback-dependencies/fallback-dependencies.js'], { shell: false, stdio: 'ignore' }) } catch (e) {}\""
-},
-```
-
-Writing the `postinstall` script that way might be a little ugly, but it's useful to do it this way if `fallback-dependencies` is a `devDependency` of your app and you don't want the `postinstall` script to fail when you do a production dependencies-only build.
-
-### Configuration
-
-#### Clone a specific version of your fallback-dependency
-
-To version your fallback-dependencies, you should use git tags to stamp versions onto your commits. To clone a specific git tag, add `-b tag_name` to the URL, e.g. `"https://some.private.git.repo.somewhere -b 1.0.5"`.
-
-#### Fetch devDependencies of your fallback-dependencies
-
-By default, `fallback-dependencies` will not install the `devDependencies` of a given repo that is cloned. If you want to do so for any repo, put it in a `fallbackDevDependencies` block instead of a `fallbackDependencies` block in your `package.json`.
-
-#### Prevent installing dependencies of fallback-dependencies
-
-To skip installing dependencies for a specific fallback-dependency, add ` -skip-deps` to the end of the URL string, e.g. `"https://some.private.git.repo.somewhere -b 1.0.5 -skip-deps"`.
-
-#### Prevent a fallback-dependency from installing its own fallback-dependencies
-
-To prevent a fallback-dependency from being installed in a situation where the repo is not a direct dependency of the root project, append the `:directOnly` flag to the end of the dependency name, e.g. `"some-private-dependency:directOnly": [ ... ] `. This will prevent repos with nested fallback-dependencies from installing their own fallback-dependencies.
-
-#### Let users prioritize URL list differently
-
-To move a preferred domain up to the top of the list of fallback-dependencies to try regardless of the order specified in the app's config, set the environment variable `FALLBACK_DEPENDENCIES_PREFERRED_WILDCARD` to a string to match in the URL list.
-
-## Drawbacks to using fallback-dependencies
+## Caveats
 
 - The fallback-dependencies module is not a standard endorsed by or maintained by the Node.js or npm teams. You're relying on the maintainers of this project to ensure that it keeps working. You can of course just fork this project if you want to do it some other way as well though.
 - You may need to set up git to authenticate against the URL(s) you're cloning from, which can present a similar degree of cumbersomeness to fetching these dependencies from a private npm registry or similar. We think in most cases git authentication is less annoying than the other methods though, particularly if you've already needed to do this authentication to clone the main project.
