@@ -10,7 +10,8 @@
   ],
   "version": "1.0.3",
   "files": [
-    "fallback-dependencies.js"
+    "fallback-dependencies.js",
+    "*.md"
   ],
   "homepage": "https://github.com/rooseveltframework/fallback-dependencies",
   "license": "CC-BY-4.0",
