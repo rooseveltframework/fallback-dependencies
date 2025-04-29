@@ -1,9 +1,3 @@
-# Changelog
-
-## Next version
-
-- Put your changes here...
-
 ## 1.0.3
 
 - Fixed bug that resulted in hard to understand errors if `git` wasn't functioning properly on your system.
