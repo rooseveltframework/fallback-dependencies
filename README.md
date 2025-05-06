@@ -1,4 +1,4 @@
-[![npm](https://img.shields.io/npm/v/fallback-dependencies.svg)](https://www.npmjs.com/package/fallback-dependencies)
+📦 **fallback-dependencies** [![npm](https://img.shields.io/npm/v/fallback-dependencies.svg)](https://www.npmjs.com/package/fallback-dependencies)
 
 A Node.js module that allows you to add git repo dependencies to your Node.js app from a cascading list of fallback locations.
 
