@@ -13,7 +13,7 @@
     "fallback-dependencies.js",
     "*.md"
   ],
-  "homepage": "https://github.com/rooseveltframework/fallback-dependencies",
+  "homepage": "https://rooseveltframework.org/docs/fallback-dependencies/latest",
   "license": "CC-BY-4.0",
   "main": "fallback-dependencies.js",
   "engines": {
