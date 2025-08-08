@@ -282,7 +282,7 @@ function executeFallbackList (listType) {
         }
       }
       // remove stale directories from target directory
-      // by default it will remove them, but asks user to confirm if they want to remove them. answer defaults to no.
+      // by default it will ask user to confirm if they want to remove them. defaults to no
       // if the FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES is present and set to true, skip prompt and assume yes, if it is present and set to false, skip prompt and assume no
       const ok = skipPrompts || await yesno({
         question: `Would you like to remove all stale directories from ${fallbackDependenciesDir}?`
