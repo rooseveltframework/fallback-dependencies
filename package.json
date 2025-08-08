@@ -20,6 +20,8 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
+    "roosevelt-logger": "1.0.1",
+    "yesno": "0.4.0"
   },
   "devDependencies": {
     "c8": "10.1.3",

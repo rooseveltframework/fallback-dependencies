@@ -4,6 +4,10 @@ const { spawnSync, spawn } = require('child_process')
 let pkgPath = process.argv[1] // full path of postinstall script being executed, presumably buried in node_modules in your app
 pkgPath = pkgPath.split('node_modules')[0] // take only the part preceding node_modules
 const pkg = require(pkgPath + 'package.json') // require the package.json in that folder
+const Logger = require('roosevelt-logger')
+const logger = new Logger()
+const yesno = require('yesno')
+const skipPrompts = process.env.FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES || false
 
 function executeFallbackList (listType) {
   // sanity check that git actually works
@@ -28,7 +32,7 @@ function executeFallbackList (listType) {
     console.error('Process killed due to timeout.')
   }, 5000)
 
-  gitProcess.on('close', (code) => {
+  gitProcess.on('close', async (code) => {
     clearTimeout(timeout)
     if (code !== 1) { // git's help messages exit with code 1
       if (output) console.log(output)
@@ -77,6 +81,8 @@ function executeFallbackList (listType) {
           process.exit(1)
         }
       }
+      const failedDependencies = []
+      let failedToClone = 0
       for (let dependency in pkg[listType].repos) {
         const fullDep = dependency
         const depFlags = dependency.split(':')
@@ -140,37 +146,116 @@ function executeFallbackList (listType) {
                     if (output.status !== 0) throw output
                     if (output.stdout.toString().trim() === version) {
                       console.log('Already up to date: ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' is already up to date because the commit\'s git tag matches the desired -b version number.')
-                      break // stop checking fallbacks
+                      if (!process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI) break // stop checking fallbacks
                     } else {
-                      console.log('Removing ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' because the commit\'s git tag does not match the desired -b version number. It will be re-cloned.')
-                      fs.rmSync(path.resolve(fallbackDependenciesDir + '/' + dependency, ''), { recursive: true, force: true })
-                      reClone = true
+                      const tags = spawnSync('git', ['tag'], {
+                        shell: false,
+                        cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
+                      })
+                      if (tags.status !== 0) throw tags
+                      if (!tags.stdout.toString().split('\n').includes(version)) { // version supplied is not a tag
+                        const remote = spawnSync('git', ['remote'], {
+                          shell: false,
+                          cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
+                        })
+                        if (remote.status !== 0) throw remote
+                        const fetch = spawnSync('git', ['fetch', remote.stdout.toString().trim()], {
+                          shell: false,
+                          cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
+                        })
+                        if (fetch.status !== 0) throw fetch
+                        const commitsBehind = spawnSync('git', ['rev-list', '--count', `HEAD..${remote.stdout.toString().trim()}/${version}`], {
+                          shell: false,
+                          cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
+                        })
+                        if (commitsBehind.status !== 0) {
+                          const checkout = spawnSync('git', ['checkout', version], {
+                            shell: false,
+                            cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
+                          })
+                          if (checkout.status !== 0) throw checkout
+                          console.log(`Successfully checked out commit ${version}.`)
+                        } else if (commitsBehind.stdout.toString() > 0) { // git pull if behind
+                          console.log('There are new commits available.')
+                          console.log('Running git pull on ' + fallbackDependenciesDir + '/' + dependency + '...')
+                          const pull = spawnSync('git', ['pull', remote.stdout.toString().trim(), version], {
+                            shell: false,
+                            cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
+                          })
+                          if (pull.status !== 0) throw pull
+                        } else console.log(`Branch ${version} is up to date.`)
+                        break // stop checking fallbacks
+                      } else if (output.stdout.toString().trim() !== version && tags.stdout.toString().split('\n').includes(version)) { // version supplied is a valid tag, but different from current tag
+                        const fetch = spawnSync('git', ['fetch', '--tags'], {
+                          shell: false,
+                          cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
+                        })
+                        if (fetch.status !== 0) throw fetch
+                        const checkout = spawnSync('git', ['checkout', version], {
+                          shell: false,
+                          cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
+                        })
+                        if (checkout.status !== 0) throw checkout
+                        console.log(`Successfully checked out tag ${version}.`)
+                        break // stop checking fallbacks
+                      } else {
+                        console.log('Removing ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' because the commit\'s git tag does not match the desired -b version number. It will be re-cloned.')
+                        fs.rmSync(path.resolve(fallbackDependenciesDir + '/' + dependency, ''), { recursive: true, force: true })
+                        reClone = true
+                      }
                     }
                   } else {
                     console.error('Cannot update ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' because it appears to be a different git repo or from a different remote!')
                   }
                 }
-                if (!reClone) {
+                if (!reClone && !process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI) {
                   continue // try the next fallback
                 }
               }
             }
-            // not updating, trying a fresh clone
-            console.log('Trying to clone ' + url + ' ' + dependency)
-            const args = ['clone']
-            args.push.apply(args, url.split(' '))
-            args.push.apply(args, dependency.split(' '))
-            const output = spawnSync('git', args, {
-              shell: false,
-              stdio: [0, 1, 2], // display output from git
-              cwd: path.resolve(fallbackDependenciesDir, '') // where we're cloning the repo to
-            })
-            if (output.status !== 0) throw output
+            if (!process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI) {
+              // not updating, trying a fresh clone
+              console.log('Trying to clone ' + url + ' ' + dependency)
+              const args = ['clone']
+              args.push.apply(args, url.split(' '))
+              args.push.apply(args, dependency.split(' '))
+              const output = spawnSync('git', args, {
+                shell: false,
+                stdio: [0, 1, 2], // display output from git
+                cwd: path.resolve(fallbackDependenciesDir, '') // where we're cloning the repo to
+              })
+              if (output.status !== 0) {
+                if (args.includes('-b')) {
+                  let version = ''
+                  for (const key in args) {
+                    const part = args[key]
+                    if (part === '-b') {
+                      version = args[parseInt(key) + 1]
+                      args.splice(key, 2)
+                      break
+                    }
+                  }
+                  const cloneUrl = spawnSync('git', args, {
+                    shell: false,
+                    stdio: [0, 1, 2], // display output from git
+                    cwd: path.resolve(fallbackDependenciesDir, '') // where we're cloning the repo to
+                  })
+                  if (cloneUrl.status !== 0) throw cloneUrl
+                  const checkout = spawnSync('git', ['checkout', version], {
+                    shell: false,
+                    cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
+                  })
+                  if (checkout.status !== 0) throw checkout
+                  console.log(`Successfully checked out commit ${version}.`)
+                } else throw output
+              }
+            }
             // do npm ci in the new dir only if package-lock exists and the don't install deps flag is not set
             if (fs.existsSync(fallbackDependenciesDir + '/' + dependency + '/package-lock.json') && !skipDeps) {
               console.log('Running npm ci on ' + fallbackDependenciesDir + '/' + dependency + '...')
               const args = ['ci']
               if (listType === 'fallbackDependencies') args.push('--omit=dev')
+              if (process.env.FALLBACK_DEPENDENCIES_NPM_CI_ARGS) args.push(...process.env.FALLBACK_DEPENDENCIES_NPM_CI_ARGS.split(' ')) // add specified args to npm ci
               const output = spawnSync('npm', args, {
                 env: Object.assign(process.env, {
                   FALLBACK_DEPENDENCIES_INITIATED_COMMAND: true
@@ -188,11 +273,37 @@ function executeFallbackList (listType) {
           } catch (e) {
             if (fallbacks.length === (parseInt(i) + 1)) {
               console.error('Unable to resolve dependency ' + dependency + ' — all fallbacks failed to clone!\n')
+              failedDependencies.push(dependency)
+              failedToClone++
             } else {
               console.log('Trying fallback...')
             }
           }
         }
+      }
+      // remove stale directories from target directory
+      // by default it will remove them, but asks user to confirm if they want to remove them. answer defaults to no.
+      // if the FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES is present and set to true, skip prompt and assume yes, if it is present and set to false, skip prompt and assume no
+      const ok = skipPrompts || await yesno({
+        question: `Would you like to remove all stale directories from ${fallbackDependenciesDir}?`
+      })
+      if (ok && process.env.FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES !== 'false') {
+        const repoList = Object.keys(pkg[listType].repos)
+        const files = fs.readdirSync(fallbackDependenciesDir, { withFileTypes: true })
+        const directories = files.filter(dirent => dirent.isDirectory()).map(dirent => dirent.name)
+        const reposToRemove = directories.filter(value => !repoList.includes(value))
+        if (reposToRemove.length > 0) {
+          for (const repo of reposToRemove) fs.rmSync(path.resolve(fallbackDependenciesDir + '/' + repo, ''), { recursive: true, force: true })
+          console.log('Removed stale directories from ' + fallbackDependenciesDir)
+        }
+      }
+
+      // throw error message if any fallbacks failed to clone
+      if (failedToClone > 0) {
+        console.log('')
+        logger.error(`${failedToClone} out of ${Object.keys(pkg[listType].repos).length} dependencies failed to clone, including:`)
+        for (const dependency of failedDependencies) logger.error('  ' + dependency)
+        process.exit(1)
       }
     }
   })
