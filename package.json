@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "c8": "10.1.3",
-    "mocha": "11.7.1",
+    "mocha": "11.7.4",
     "standard": "17.1.2"
   },
   "mocha": {
