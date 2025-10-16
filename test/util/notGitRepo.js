@@ -52,7 +52,7 @@ module.exports = (listType) => {
     }
     const repo2Package = {
       dependencies: {
-        'fallback-dependencies': '../../../../../../'
+        'fallback-dependencies': '../../../../../'
       },
       scripts: {
         postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'

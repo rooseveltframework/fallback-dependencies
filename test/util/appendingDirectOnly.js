@@ -62,8 +62,7 @@ module.exports = () => {
       dir: 'lib',
       repos: {
         'fallback-deps-test-repo-3:directOnly': '../../../../../repos/repo3'
-      },
-      reposFile: 'reposFile.json'
+      }
     }
     const repo2PackageLock = {
       name: 'repo1',

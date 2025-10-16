@@ -100,12 +100,12 @@ module.exports = (listType) => {
       spawnSync('git', ['--bare', 'init'], {
         shell: false,
         stdio: 'pipe', // hide output from git
-        cwd: path.resolve(`${testSrc}/repos/${repoList[id]}`, '') // where we're cloning the repo to
+        cwd: path.normalize(`${testSrc}/repos/${repoList[id]}`, '') // where we're cloning the repo to
       })
       spawnSync('git', ['clone', `${testSrc}/repos/${repoList[id]}`], {
         shell: false,
         stdio: 'pipe', // hide output from git
-        cwd: path.resolve(`${testSrc}/clones`, '') // where we're cloning the repo to
+        cwd: path.normalize(`${testSrc}/clones`, '') // where we're cloning the repo to
       })
       if (repoList[id] === 'repo1') fs.writeFileSync(`${testSrc}/clones/repo1/reposFile.json`, JSON.stringify(repo1FileData))
       process.chdir(`${testSrc}/clones/${repoList[id]}`)
@@ -114,28 +114,28 @@ module.exports = (listType) => {
       spawnSync('git', ['add', '.'], {
         shell: false,
         stdio: 'pipe', // hide output from git
-        cwd: path.resolve(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
+        cwd: path.normalize(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
       })
       spawnSync('git', ['commit', '-m', '"commit"'], {
         shell: false,
         stdio: 'pipe', // hide output from git
-        cwd: path.resolve(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
+        cwd: path.normalize(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
       })
       spawnSync('git', ['push'], {
         shell: false,
         stdio: 'pipe', // hide output from git
-        cwd: path.resolve(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
+        cwd: path.normalize(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
       })
     }
     spawnSync('npm', ['ci'], {
       shell: false,
       stdio: 'pipe', // hide output from git
-      cwd: path.resolve(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
+      cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
     spawnSync('npm', ['ci'], {
       shell: false,
       stdio: 'pipe', // hide output from git
-      cwd: path.resolve(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
+      cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
     process.chdir(`${testSrc}`)
   } catch {}

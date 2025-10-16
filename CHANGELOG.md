@@ -1,3 +1,11 @@
+## 1.1.0
+
+- Added support for passing CLI arguments to `npm ci`.
+- Added option to clear out stale directories from dependency target folder.
+- Added support for cloning / `git` pulling from non-tagged commits.
+- Added option to run `npm ci` on clones even if they already exist.
+- Updated tests.
+
 ## 1.0.3
 
 - Fixed bug that resulted in hard to understand errors if `git` wasn't functioning properly on your system.

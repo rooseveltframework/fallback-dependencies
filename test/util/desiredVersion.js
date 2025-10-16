@@ -132,6 +132,10 @@ module.exports = (listType) => {
       stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
+
+    repo1FileData['fallback-deps-test-repo-2'].shift()
+    fs.writeFileSync(`${testSrc}/clones/repo1/reposFile.json`, JSON.stringify(repo1FileData))
+
     spawnSync('npm', ['ci'], {
       shell: false,
       stdio: 'pipe', // hide output from git

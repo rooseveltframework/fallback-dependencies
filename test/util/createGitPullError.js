@@ -183,11 +183,13 @@ module.exports = (listType) => {
       stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
-    spawnSync('npm', ['ci'], {
+    const output = spawnSync('npm', ['ci'], {
       shell: false,
       stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
     process.chdir(`${testSrc}`)
+
+    return output.stderr.toString()
   } catch {}
 }

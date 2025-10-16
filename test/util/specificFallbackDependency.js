@@ -47,12 +47,12 @@ module.exports = (listType) => {
     }
     const repo1FileData = {
       'fallback-deps-test-repo-2': [
-        '../../../repos/repo2', 'git://github.com/rooseveltframework/roosevelt.git -b 0.21.0 -skip-deps'
+        '../../../repos/repo2 -skip-deps'
       ]
     }
     const repo2Package = {
       dependencies: {
-        'fallback-dependencies': '../../../../../../'
+        'fallback-dependencies': '../../../../../'
       },
       scripts: {
         postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'

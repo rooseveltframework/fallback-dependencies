@@ -1,9 +1,12 @@
 module.exports = (listType) => {
   const fs = require('fs')
   const path = require('path')
-  const testSrc = path.resolve(__dirname, '../../test')
+  const os = require('os')
   const { spawnSync } = require('child_process')
+  const testSrc = path.resolve(__dirname, '../../test')
   const repoList = ['repo1', 'repo2', 'repo3']
+  const command = os.platform() === 'win32' ? 'where' : 'which'
+  const splitPath = os.platform() === 'win32' ? process.env.PATH.split(';') : process.env.PATH.split(':')
 
   try {
     fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
@@ -105,8 +108,6 @@ module.exports = (listType) => {
         stdio: 'pipe', // hide output from git
         cwd: path.normalize(`${testSrc}/clones`, '') // where we're cloning the repo to
       })
-      if (repoList[id] === 'repo1') fs.mkdirSync(`${testSrc}/clones/repo1/lib`)
-      process.chdir(`${testSrc}/clones/${repoList[id]}`)
       fs.writeFileSync(`${testSrc}/clones/${repoList[id]}/package.json`, JSON.stringify(packageList[id][0]))
       fs.writeFileSync(`${testSrc}/clones/${repoList[id]}/package-lock.json`, JSON.stringify(packageList[id][1]))
       spawnSync('git', ['add', '.'], {
@@ -125,17 +126,45 @@ module.exports = (listType) => {
         cwd: path.normalize(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
       })
     }
-    spawnSync('npm', ['ci'], {
+
+    // remove git from PATH
+    const gitPath = spawnSync(command, ['-a', 'git'], { shell: false })
+    const gitPathArr = gitPath.stdout.toString().trim().split('\n')
+    for (let i = 0; i < gitPathArr.length; i++) {
+      const splitGitPath = os.platform() === 'win32' ? gitPathArr[i].split('\\') : gitPathArr[i].split('/')
+      splitGitPath.splice(splitGitPath.length - 1, 1)
+      const joinGitPath = os.platform() === 'win32' ? splitGitPath.join('\\') : splitGitPath.join('/')
+      for (let j = 0; j < splitPath.length; j++) {
+        if (splitPath[j] === joinGitPath) splitPath.splice(j, 1)
+      }
+    }
+
+    // make sure nodejs wasn't removed from PATH
+    const nodePath = spawnSync(command, ['-a', 'node'], { shell: false })
+    const nodePathArr = nodePath.stdout.toString().trim().split('\n')
+    let nodeExists
+    for (let i = 0; i < nodePathArr.length; i++) {
+      const splitNodePath = os.platform() === 'win32' ? nodePathArr[i].split('\\') : nodePathArr[i].split('/')
+      splitNodePath.splice(splitNodePath.length - 1, 1)
+      const joinNodePath = os.platform() === 'win32' ? splitNodePath.join('\\') : splitNodePath.join('/')
+      for (let j = 0; j < splitPath.length; j++) {
+        if (splitPath[j] === joinNodePath) {
+          nodeExists = true
+          break
+        }
+      }
+    }
+    if (!nodeExists) splitPath.push(nodePath[0])
+
+    const joinPathNoGit = os.platform() === 'win32' ? splitPath.join(';') : splitPath.join(':')
+    process.env.PATH = joinPathNoGit
+
+    const output = spawnSync('npm', ['ci'], {
       shell: false,
       stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
-    fs.mkdirSync(`${testSrc}/clones/repo1/lib/stale-dir`) // to cover "remove stale directories" prompt
-    spawnSync('npm', ['ci'], {
-      shell: false,
-      stdio: 'pipe', // hide output from git
-      cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
-    })
-    process.chdir(`${testSrc}`)
+
+    return output.stderr.toString()
   } catch {}
 }
