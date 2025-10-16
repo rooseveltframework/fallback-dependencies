@@ -2,12 +2,10 @@ const fs = require('fs')
 const path = require('path')
 const Logger = require('roosevelt-logger')
 const logger = new Logger()
-const { confirm } = require('@inquirer/prompts')
 const { spawnSync, spawn } = require('child_process')
 let pkgPath = process.argv[1] // full path of postinstall script being executed, presumably buried in node_modules in your app
 pkgPath = pkgPath.split('node_modules')[0] // take only the part preceding node_modules
 const pkg = require(pkgPath + 'package.json') // require the package.json in that folder
-const skipPrompts = process.env.FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES || false
 
 function executeFallbackList (listType) {
   // sanity check that git actually works
@@ -278,14 +276,9 @@ function executeFallbackList (listType) {
           }
         }
       }
+
       // remove stale directories from target directory
-      // by default it will ask user to confirm if they want to remove them. defaults to no
-      // if the FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES env var is present and set to true, skip the prompt and proceed to remove the dirs; if the env var is present and set to false, skip the prompt do not remove the dirs
-      const ok = skipPrompts || await confirm({
-        message: `Would you like to remove all stale directories from ${fallbackDependenciesDir}?`,
-        default: false
-      }, { clearPromptOnDone: true })
-      if (ok && process.env.FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES !== 'false') {
+      if (pkg[listType].removeStaleDirectories || (process.env.FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES && process.env.FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES !== 'false')) {
         const repoList = Object.keys(pkg[listType].repos)
         const files = fs.readdirSync(fallbackDependenciesDir, { withFileTypes: true })
         const directories = files.filter(dirent => dirent.isDirectory()).map(dirent => dirent.name)

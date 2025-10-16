@@ -21,7 +21,8 @@ module.exports = (listType) => {
     }
     repo1Package[listType] = {
       dir: 'lib',
-      reposFile: 'reposFile.json'
+      reposFile: 'reposFile.json',
+      removeStaleDirectories: true
     }
     const repo1PackageLock = {
       name: 'repo1',

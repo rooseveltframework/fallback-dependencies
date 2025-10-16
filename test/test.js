@@ -18,7 +18,7 @@ const pullFromBranchName = path.join(__dirname, './util/pullFromBranchName.js')
 const pullFromNonTaggedCommit = path.join(__dirname, './util/pullFromNonTaggedCommit.js')
 const reposFileInUse = path.join(__dirname, './util/reposFileInUse.js')
 const specificFallbackDependency = path.join(__dirname, './util/specificFallbackDependency.js')
-process.env.FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES = true // disable "remove stale directories" prompt
+process.env.FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES = true
 
 afterEach(done => {
   fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
@@ -30,7 +30,6 @@ afterEach(done => {
 process.on('SIGINT', () => {
   fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
   fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
-  delete process.env.FALLBACK_DEPENDENCIES_PREFERRED_WILDCARD
   process.exit()
 })
 
@@ -175,23 +174,6 @@ describe('universal fallback-dependencies tests', () => {
       assert(!fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2/lib/fallback-deps-test-repo-3/package.json')), './clones/repo1/lib/fallback-deps-test-repo-2/lib/fallback-deps-test-repo-3/package.json does exist')
     }
     delete process.env.FALLBACK_DEPENDENCIES_PREFERRED_WILDCARD
-  })
-
-  it('should run fallback dependencies with "remove stale directories" prompt enabled', () => {
-    delete process.env.FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES
-    const listTypes = ['fallbackDependencies', 'fallbackDevDependencies']
-    while (listTypes.length) {
-      fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
-      fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
-      require(basicFallbackDependencies)(listTypes.pop())
-      assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib')), './clones/repo1/lib does not exist')
-      assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2')), './clones/repo1/lib/fallback-deps-test-repo-2 does not exist')
-      assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2/lib')), './clones/repo1/lib/fallback-deps-test-repo-2/lib does not exist')
-      assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2/lib/fallback-deps-test-repo-3')), './clones/repo1/lib/fallback-deps-test-repo-2/lib/fallback-deps-test-repo-3 does not exist')
-      assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2/lib/fallback-deps-test-repo-3/package-lock.json')), './clones/repo1/lib/fallback-deps-test-repo-2/lib/fallback-deps-test-repo-3/package-lock.json does not exist')
-      assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2/lib/fallback-deps-test-repo-3/package.json')), './clones/repo1/lib/fallback-deps-test-repo-2/lib/fallback-deps-test-repo-3/package.json does not exist')
-    }
-    process.env.FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES = true // set env var back for remaining tests
   })
 
   it('should exit gracefully due to git not being installed', () => {
