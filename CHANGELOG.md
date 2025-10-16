@@ -1,7 +1,7 @@
 ## 1.1.0
 
 - Added support for passing CLI arguments to `npm ci`.
-- Added option to clear out stale directories from dependency target folder via FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES environment variable or fallback-dependencies config.
+- Added option to clear out stale directories from dependency target folder via FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES environment variable or removeStaleDirectories in fallback-dependencies config.
 - Added support for cloning / `git` pulling from non-tagged commits.
 - Added option to run `npm ci` on clones even if they already exist.
 - Updated tests.
