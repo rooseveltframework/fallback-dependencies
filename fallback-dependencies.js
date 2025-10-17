@@ -114,6 +114,7 @@ function executeFallbackList (listType) {
                 logger.error('Cannot update ' + fallbackDependenciesDir + '/' + dependency + ' because it does not appear to be a git repo!')
                 break // move on to next dep
               } else {
+                let reClone = false
                 // scan .git/config to see if `url` exists within it
                 if (fs.readFileSync(fallbackDependenciesDir + '/' + dependency + '/.git/config', 'utf8').search(url) > 0) {
                   // update only if it's a direct match — same repo from the same place
@@ -132,41 +133,47 @@ function executeFallbackList (listType) {
                 } else {
                   const parts = url.split(' ')
                   if (parts.includes('-b')) {
-                    let version = ''
-                    for (const key in parts) {
-                      const part = parts[key]
-                      if (part === '-b') {
-                        version = parts[parseInt(key) + 1]
-                        break
-                      }
-                    }
-                    const output = spawnSync('git', ['describe', '--tags'], {
-                      shell: false,
-                      cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
-                    })
-                    if (output.status !== 0) throw output
-                    if (output.stdout.toString().trim() === version) {
-                      logger.log('Already up to date: ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' is already up to date because the commit\'s git tag matches the desired -b version number.')
-                      if (!process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI) break // stop checking fallbacks
+                    if (!parts.some(url => fs.readFileSync(fallbackDependenciesDir + '/' + dependency + '/.git/config', 'utf8').includes(url))) {
+                      logger.log('Removing ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' because a different git url was supplied. It will be re-cloned.')
+                      fs.rmSync(path.resolve(fallbackDependenciesDir + '/' + dependency, ''), { recursive: true, force: true })
+                      reClone = true
                     } else {
-                      const tags = spawnSync('git', ['tag'], {
+                      let version = ''
+                      for (const key in parts) {
+                        const part = parts[key]
+                        if (part === '-b') {
+                          version = parts[parseInt(key) + 1]
+                          break
+                        }
+                      }
+                      const output = spawnSync('git', ['tag'], { // get list of tags
                         shell: false,
                         cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                       })
-                      if (tags.status !== 0) throw tags
-                      if (tags.stdout.toString().split('\n').includes(version)) { // version supplied is a valid tag, but differs from current tag
-                        const fetch = spawnSync('git', ['fetch', '--tags'], {
+                      if (output.status !== 0) throw output
+                      if (output.stdout.toString().split('\n').includes(version)) { // version supplied is a valid tag
+                        const tag = spawnSync('git', ['describe', '--tags'], { // get nearest tag
                           shell: false,
                           cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                         })
-                        if (fetch.status !== 0) throw fetch
-                        const checkout = spawnSync('git', ['checkout', version], {
-                          shell: false,
-                          cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
-                        })
-                        if (checkout.status !== 0) throw checkout
-                        logger.log(`Successfully checked out tag ${version}.`)
-                        break // stop checking fallbacks
+                        if (tag.status !== 0) throw tag
+                        if (tag.stdout.toString().trim() === version) { // up to date with supplied tag
+                          logger.log('Already up to date: ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' is already up to date because the commit\'s git tag matches the desired -b version number.')
+                          if (!process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI) break // stop checking fallbacks
+                        } else { // version supplied is a valid tag, but differs from current tag
+                          const fetch = spawnSync('git', ['fetch', '--tags'], {
+                            shell: false,
+                            cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
+                          })
+                          if (fetch.status !== 0) throw fetch
+                          const checkout = spawnSync('git', ['checkout', version], {
+                            shell: false,
+                            cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
+                          })
+                          if (checkout.status !== 0) throw checkout
+                          logger.log(`Successfully checked out tag ${version}.`)
+                          break // stop checking fallbacks
+                        }
                       } else { // version supplied is not a tag
                         const remote = spawnSync('git', ['remote'], {
                           shell: false,
@@ -197,7 +204,7 @@ function executeFallbackList (listType) {
                             cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                           })
                           if (pull.status !== 0) throw pull
-                        } else logger.log(`Branch ${version} is up to date.`)
+                        } else logger.log('Already up to date: ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' is already up to date because the commit\'s branch name matches the desired -b branch name.')
                         break // stop checking fallbacks
                       }
                     }
@@ -205,7 +212,7 @@ function executeFallbackList (listType) {
                     logger.error('Cannot update ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' because it appears to be a different git repo or from a different remote!')
                   }
                 }
-                if (!process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI) continue // try the next fallback
+                if (!process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI && !reClone) continue // try the next fallback
               }
             }
             if (!process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI) {

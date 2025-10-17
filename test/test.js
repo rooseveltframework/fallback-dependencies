@@ -193,7 +193,7 @@ describe('universal fallback-dependencies tests', () => {
     }
   })
 
-  it('should trigger "cannnot update dependency" error', () => {
+  it('should trigger "cannot update dependency" error', () => {
     fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
     fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
     const output = require(failedToUpdate)('fallbackDependencies')
