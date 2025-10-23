@@ -18,7 +18,7 @@ To prevent a fallback-dependency from being installed in a situation where the r
 
 To move a preferred domain up to the top of the list of fallback-dependencies to try regardless of the order specified in the app's config, set the environment variable `FALLBACK_DEPENDENCIES_PREFERRED_WILDCARD` to a string to match in the URL list.
 
-## Run npm ci on already cloned repos
+## Run `npm ci` on already cloned repos
 
 To run `npm ci` on clones even if they already exist, set the environment variable `FALLBACK_DEPENDENCIES_RERUN_NPM_CI` to `true`.
 
