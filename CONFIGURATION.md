@@ -28,4 +28,4 @@ To include additional arguments to pass to the `npm ci` command, set the environ
 
 ## Remove stale directories from dependency target folder
 
-To remove stale directories from the dependency target folder, set the environment variable `FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES` to `true`.
+To remove stale directories from the dependency target folder, set the environment variable `FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES` to `true` or set `removeStaleDirectories` in `fallbackDependencies` package.json config.
