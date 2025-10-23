@@ -24,7 +24,7 @@ To run `npm ci` on clones even if they already exist, set the environment variab
 
 ## Add arguments to `npm ci`
 
-To include additional arguments to pass to the `npm ci` command, set the environment variable, `FALLBACK_DEPENDENCIES_NPM_CI_ARGS` to a string separating each argument with a space, e.g. `--no-audit --silent`, or an array of strings, e.g. `['--no-audit', --silent]`.
+To include additional arguments to pass to the `npm ci` command, set the environment variable, `FALLBACK_DEPENDENCIES_NPM_CI_ARGS` to a string separating each argument with a space, e.g. `--no-audit --silent`, or an array of strings, e.g. `['--no-audit', --silent]` or set `npmCiArgs` in `fallbackDependencies` package.json config.
 
 ## Remove stale directories from dependency target folder
 
