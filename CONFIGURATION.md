@@ -20,7 +20,7 @@ To move a preferred domain up to the top of the list of fallback-dependencies to
 
 ## Run `npm ci` on already cloned repos
 
-To run `npm ci` on clones even if they already exist, set the environment variable `FALLBACK_DEPENDENCIES_RERUN_NPM_CI` to `true`.
+To run `npm ci` on clones even if they already exist, set the environment variable `FALLBACK_DEPENDENCIES_RERUN_NPM_CI` to `true` or set `rerunNpmCi` in `fallbackDependencies` package.json config.
 
 ## Add arguments to `npm ci`
 
