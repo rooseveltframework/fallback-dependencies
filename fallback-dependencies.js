@@ -120,7 +120,7 @@ function executeFallbackList (listType) {
                       stdio: [0, 1, 2], // display output from git
                       cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                     })
-                    if (output.status !== 0) throw output
+                    if (output.status !== 0) throw output.stderr.toString()
                   } catch (e) {
                     logger.error('Cannot update ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' because of a git pull error!')
                   }
@@ -151,7 +151,7 @@ function executeFallbackList (listType) {
                           shell: false,
                           cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                         })
-                        if (tag.status !== 0) throw tag
+                        if (tag.status !== 0) throw tag.stderr.toString()
                         if (tag.stdout.toString().trim() === version) { // up to date with supplied tag
                           logger.log('Already up to date: ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' is already up to date because the commit\'s git tag matches the desired -b version number.')
                           if (!process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI && !pkg[listType].rerunNpmCi) break // stop checking fallbacks
@@ -165,7 +165,7 @@ function executeFallbackList (listType) {
                             shell: false,
                             cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                           })
-                          if (checkout.status !== 0) throw checkout
+                          if (checkout.status !== 0) throw checkout.stderr.toString()
                           logger.log(`Successfully checked out tag ${version}.`)
                           break // stop checking fallbacks
                         }
@@ -174,12 +174,12 @@ function executeFallbackList (listType) {
                           shell: false,
                           cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                         })
-                        if (remote.status !== 0) throw remote
+                        if (remote.status !== 0) throw remote.stderr.toString()
                         const fetch = spawnSync('git', ['fetch', remote.stdout.toString().trim()], {
                           shell: false,
                           cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                         })
-                        if (fetch.status !== 0) throw fetch
+                        if (fetch.status !== 0) throw fetch.stderr.toString()
                         const commitsBehind = spawnSync('git', ['rev-list', '--count', `HEAD..${remote.stdout.toString().trim()}/${version}`], {
                           shell: false,
                           cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
@@ -189,7 +189,7 @@ function executeFallbackList (listType) {
                             shell: false,
                             cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                           })
-                          if (checkout.status !== 0) throw checkout
+                          if (checkout.status !== 0) throw checkout.stderr.toString()
                           logger.log(`Successfully checked out commit ${version}.`)
                         } else if (commitsBehind.stdout.toString() > 0) { // git pull if behind
                           logger.log('There are new commits available.')
@@ -198,7 +198,7 @@ function executeFallbackList (listType) {
                             shell: false,
                             cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                           })
-                          if (pull.status !== 0) throw pull
+                          if (pull.status !== 0) throw pull.stderr.toString()
                         } else logger.log('Already up to date: ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' is already up to date because the commit\'s branch name matches the desired -b branch name.')
                         break // stop checking fallbacks
                       }
@@ -237,14 +237,14 @@ function executeFallbackList (listType) {
                     stdio: [0, 1, 2], // display output from git
                     cwd: path.resolve(fallbackDependenciesDir, '') // where we're cloning the repo to
                   })
-                  if (cloneUrl.status !== 0) throw cloneUrl
+                  if (cloneUrl.status !== 0) throw cloneUrl.stderr.toString()
                   const checkout = spawnSync('git', ['checkout', version], {
                     shell: false,
                     cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                   })
-                  if (checkout.status !== 0) throw checkout
+                  if (checkout.status !== 0) throw checkout.stderr.toString()
                   logger.log(`Successfully checked out commit ${version}.`)
-                } else throw output
+                } else throw output.stderr.toString()
               }
             }
             // do npm ci in the new dir only if package-lock exists and the don't install deps flag is not set
