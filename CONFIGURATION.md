@@ -1,6 +1,6 @@
 ## Clone a specific version of your fallback-dependency
 
-To version your fallback-dependencies, you should use git tags to stamp versions onto your commits. To clone a specific git tag, add `-b tag_name` to the URL, e.g. `"https://some.private.git.repo.somewhere -b 1.0.5"`. You also have the option to clone specific branch names commit ID's, providing enhanced control over your project's versions, e.g. `"https://some.private.git.repo.somewhere -b branch_name"` or `"https://some.private.git.repo.somewhere -b commit_id"`. In the case that a tag and branch have the same name, the tagged version will take precedence.
+To version your fallback-dependencies, you should use git tags to stamp versions onto your commits. To clone a specific git tag, add `-b tag_name` to the URL, e.g. `"https://some.private.git.repo.somewhere -b 1.0.5"`. You also have the option to clone specific branch names commit IDs, providing enhanced control over your project's versions, e.g. `"https://some.private.git.repo.somewhere -b branch_name"` or `"https://some.private.git.repo.somewhere -b commit_id"`. In the case that a tag and branch have the same name, the tagged version will take precedence.
 
 ## Fetch devDependencies of your fallback-dependencies
 
