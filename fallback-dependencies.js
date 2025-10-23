@@ -14,12 +14,7 @@ function executeFallbackList (listType) {
     stdio: ['pipe', 'pipe', 'pipe'] // hide all output from this sanity check command from the console
   })
 
-  let output = ''
   let error = ''
-
-  gitProcess.stdout.on('data', (data) => {
-    output += data.toString()
-  })
 
   gitProcess.stderr.on('data', (data) => {
     error += data.toString()
@@ -37,7 +32,6 @@ function executeFallbackList (listType) {
   gitProcess.on('close', async (code) => {
     clearTimeout(timeout)
     if (code !== 1) { // git's help messages exit with code 1
-      if (output) logger.log(output)
       if (error) logger.error(error)
       throw new Error(`git process failed with code ${code}`)
     }
@@ -57,11 +51,12 @@ function executeFallbackList (listType) {
         ...pkg[listType].repos,
         ...reposFile
       }
-      if (process.env.FALLBACK_DEPENDENCIES_PREFERRED_WILDCARD) {
+      if (process.env.FALLBACK_DEPENDENCIES_PREFERRED_WILDCARD || pkg[listType].preferredWildcard) {
+        const preferredWildcard = process.env.FALLBACK_DEPENDENCIES_PREFERRED_WILDCARD ? process.env.FALLBACK_DEPENDENCIES_PREFERRED_WILDCARD : pkg[listType].preferredWildcard
         for (const key in pkg[listType].repos) {
           const urls = pkg[listType].repos[key]
           for (let i = 0; i < urls.length; i++) {
-            if (urls[i].includes(process.env.FALLBACK_DEPENDENCIES_PREFERRED_WILDCARD)) {
+            if (urls[i].includes(preferredWildcard)) {
               const url = urls[i]
               urls.splice(i, 1)
               urls.unshift(url)
@@ -150,7 +145,7 @@ function executeFallbackList (listType) {
                         shell: false,
                         cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                       })
-                      if (output.status !== 0) throw output
+                      if (output.status !== 0) throw output.stderr.toString()
                       if (output.stdout.toString().split('\n').includes(version)) { // version supplied is a valid tag
                         const tag = spawnSync('git', ['describe', '--tags'], { // get nearest tag
                           shell: false,
@@ -159,13 +154,13 @@ function executeFallbackList (listType) {
                         if (tag.status !== 0) throw tag
                         if (tag.stdout.toString().trim() === version) { // up to date with supplied tag
                           logger.log('Already up to date: ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' is already up to date because the commit\'s git tag matches the desired -b version number.')
-                          if (!process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI) break // stop checking fallbacks
+                          if (!process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI && !pkg[listType].rerunNpmCi) break // stop checking fallbacks
                         } else { // version supplied is a valid tag, but differs from current tag
                           const fetch = spawnSync('git', ['fetch', '--tags'], {
                             shell: false,
                             cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                           })
-                          if (fetch.status !== 0) throw fetch
+                          if (fetch.status !== 0) throw fetch.stderr.toString()
                           const checkout = spawnSync('git', ['checkout', version], {
                             shell: false,
                             cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
@@ -212,10 +207,10 @@ function executeFallbackList (listType) {
                     logger.error('Cannot update ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' because it appears to be a different git repo or from a different remote!')
                   }
                 }
-                if (!process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI && !reClone) continue // try the next fallback
+                if (!process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI && !pkg[listType].rerunNpmCi && !reClone) continue // try the next fallback
               }
             }
-            if (!process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI) {
+            if (!process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI && !pkg[listType].rerunNpmCi) {
               // not updating, trying a fresh clone
               logger.log('Trying to clone ' + url + ' ' + dependency)
               const args = ['clone']
@@ -257,7 +252,11 @@ function executeFallbackList (listType) {
               logger.log('Running npm ci on ' + fallbackDependenciesDir + '/' + dependency + '...')
               const args = ['ci']
               if (listType === 'fallbackDependencies') args.push('--omit=dev')
-              if (process.env.FALLBACK_DEPENDENCIES_NPM_CI_ARGS) args.push(...process.env.FALLBACK_DEPENDENCIES_NPM_CI_ARGS.split(' ')) // add specified args to npm ci
+              if (process.env.FALLBACK_DEPENDENCIES_NPM_CI_ARGS || pkg[listType].npmCiArgs) { // add specified args to npm ci
+                const npmCiArgs = process.env.FALLBACK_DEPENDENCIES_NPM_CI_ARGS ? process.env.FALLBACK_DEPENDENCIES_NPM_CI_ARGS : pkg[listType].npmCiArgs
+                if (Array.isArray(npmCiArgs)) args.push(...npmCiArgs)
+                else args.push(...npmCiArgs.split(' '))
+              }
               const output = spawnSync('npm', args, {
                 env: Object.assign(process.env, {
                   FALLBACK_DEPENDENCIES_INITIATED_COMMAND: true
@@ -273,6 +272,7 @@ function executeFallbackList (listType) {
             }
             break // if it successfully clones, skip trying the fallback
           } catch (e) {
+            logger.error(e)
             if (fallbacks.length === (parseInt(i) + 1)) {
               logger.error('Unable to resolve dependency ' + dependency + ' — all fallbacks failed to clone!\n')
               failedDependencies.push(dependency)
@@ -285,7 +285,7 @@ function executeFallbackList (listType) {
       }
 
       // remove stale directories from target directory
-      if (pkg[listType].removeStaleDirectories || (process.env.FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES && process.env.FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES !== 'false')) {
+      if (process.env.FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES || pkg[listType].removeStaleDirectories) {
         const repoList = Object.keys(pkg[listType].repos)
         const files = fs.readdirSync(fallbackDependenciesDir, { withFileTypes: true })
         const directories = files.filter(dirent => dirent.isDirectory()).map(dirent => dirent.name)

@@ -21,8 +21,7 @@ module.exports = (listType) => {
     }
     repo1Package[listType] = {
       dir: 'lib',
-      reposFile: 'reposFile.json',
-      npmCiArgs: '--no-audit' // covers if statement specific to npmCiArgs
+      reposFile: 'reposFile.json'
     }
     const repo1PackageLock = {
       name: 'repo1',
@@ -48,7 +47,7 @@ module.exports = (listType) => {
     }
     const repo1FileData = {
       'fallback-deps-test-repo-2': [
-        'https://github.com/rooseveltframework/generator-roosevelt.git', 'https://github.com/rooseveltframework/generator-roosevelt.git -b 0.21.7'
+        'https://github.com/rooseveltframework/generator-roosevelt.git -b 0.21.7'
       ]
     }
     const repo2Package = {
@@ -134,14 +133,15 @@ module.exports = (listType) => {
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
 
-    repo1FileData['fallback-deps-test-repo-2'].shift()
-    fs.writeFileSync(`${testSrc}/clones/repo1/reposFile.json`, JSON.stringify(repo1FileData))
+    fs.writeFileSync(path.normalize(`${testSrc}/clones/repo1/lib/fallback-deps-test-repo-2/.git/packed-refs`), 'invalid content')
 
-    spawnSync('npm', ['ci'], {
+    const output = spawnSync('npm', ['ci'], {
       shell: false,
       stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
     process.chdir(`${testSrc}`)
+
+    return output.stderr.toString()
   } catch {}
 }

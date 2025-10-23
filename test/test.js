@@ -12,10 +12,14 @@ const domainOverride = path.join(__dirname, './util/domainOverride.js')
 const failedToClone = path.join(__dirname, './util/failedToClone')
 const failedToUpdate = path.join(__dirname, './util/failedToUpdate.js')
 const gitError = path.join(__dirname, './util/gitError.js')
+const gitFetchError = path.join(__dirname, './util/gitFetchError.js')
+const gitTagError = path.join(__dirname, './util/gitTagError.js')
+// const gitDescribeTagsError = path.join(__dirname, './util/gitDescribeTagsError.js')
 const ifRepoAlreadyExists = path.join(__dirname, './util/ifRepoAlreadyExists.js')
 const notGitRepo = path.join(__dirname, './util/notGitRepo.js')
 const pullFromBranchName = path.join(__dirname, './util/pullFromBranchName.js')
 const pullFromNonTaggedCommit = path.join(__dirname, './util/pullFromNonTaggedCommit.js')
+const reCloneRepo = path.join(__dirname, './util/reCloneRepo.js')
 const reposFileInUse = path.join(__dirname, './util/reposFileInUse.js')
 const specificFallbackDependency = path.join(__dirname, './util/specificFallbackDependency.js')
 process.env.FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES = true
@@ -136,6 +140,7 @@ describe('universal fallback-dependencies tests', () => {
   })
 
   it('should pull from a branch', () => {
+    delete process.env.FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES
     const listTypes = ['fallbackDependencies', 'fallbackDevDependencies']
     while (listTypes.length) {
       fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
@@ -145,6 +150,14 @@ describe('universal fallback-dependencies tests', () => {
       assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2')), './clones/repo1/lib/fallback-deps-test-repo-2 does not exist')
       assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2/.git')), './clones/repo1/lib/fallback-deps-test-repo-2/.git does not exist')
     }
+    process.env.FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES = true
+  })
+
+  it('should re-clone repo when attempting to clone specific -b version and url supplied differs from previously cloned repo', () => {
+    fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
+    fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
+    const output = require(reCloneRepo)('fallbackDependencies')
+    assert(output.includes('It will be re-cloned'), 'repo was not successfully re-cloned')
   })
 
   it('should skip any folder that is not a git repo', () => {
@@ -191,6 +204,28 @@ describe('universal fallback-dependencies tests', () => {
       const output = require(createGitPullError)(listTypes.pop())
       assert(output.includes('git pull error'), 'git pull was successful')
     }
+  })
+
+  it('should trigger git tag error', () => {
+    fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
+    fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
+    const output = require(gitTagError)('fallbackDependencies')
+    assert(output.includes('fatal: unterminated line in'), 'git tag command didn\'t throw an error')
+  })
+
+  // it.only('should trigger git describe tags error', () => {
+  //   fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
+  //   fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
+  //   const output = require(gitDescribeTagsError)('fallbackDependencies')
+  //   // console.log('\n\n\n', output, '\n\n\n')
+  //   // assert(output.includes('fatal: unterminated line in'), 'git tag command didn\'t throw an error')
+  // })
+
+  it('should trigger git fetch error', () => {
+    fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
+    fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
+    const output = require(gitFetchError)('fallbackDependencies')
+    assert(output.includes('fatal: couldn\'t find remote'), 'git fetch command didn\'t throw an error')
   })
 
   it('should trigger "cannot update dependency" error', () => {

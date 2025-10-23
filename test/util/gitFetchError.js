@@ -21,8 +21,7 @@ module.exports = (listType) => {
     }
     repo1Package[listType] = {
       dir: 'lib',
-      reposFile: 'reposFile.json',
-      npmCiArgs: '--no-audit' // covers if statement specific to npmCiArgs
+      reposFile: 'reposFile.json'
     }
     const repo1PackageLock = {
       name: 'repo1',
@@ -48,7 +47,8 @@ module.exports = (listType) => {
     }
     const repo1FileData = {
       'fallback-deps-test-repo-2': [
-        'https://github.com/rooseveltframework/generator-roosevelt.git', 'https://github.com/rooseveltframework/generator-roosevelt.git -b 0.21.7'
+        'https://github.com/rooseveltframework/generator-roosevelt.git -b 0.21.7',
+        'https://github.com/rooseveltframework/generator-roosevelt.git -b 0.21.6'
       ]
     }
     const repo2Package = {
@@ -109,7 +109,6 @@ module.exports = (listType) => {
         cwd: path.normalize(`${testSrc}/clones`, '') // where we're cloning the repo to
       })
       if (repoList[id] === 'repo1') fs.writeFileSync(`${testSrc}/clones/repo1/reposFile.json`, JSON.stringify(repo1FileData))
-      process.chdir(`${testSrc}/clones/${repoList[id]}`)
       fs.writeFileSync(`${testSrc}/clones/${repoList[id]}/package.json`, JSON.stringify(packageList[id][0]))
       fs.writeFileSync(`${testSrc}/clones/${repoList[id]}/package-lock.json`, JSON.stringify(packageList[id][1]))
       spawnSync('git', ['add', '.'], {
@@ -137,11 +136,19 @@ module.exports = (listType) => {
     repo1FileData['fallback-deps-test-repo-2'].shift()
     fs.writeFileSync(`${testSrc}/clones/repo1/reposFile.json`, JSON.stringify(repo1FileData))
 
-    spawnSync('npm', ['ci'], {
+    const config = fs.readFileSync(path.normalize(`${testSrc}/clones/repo1/lib/fallback-deps-test-repo-2/.git/config`)).toString()
+    const updatedConfig = config.split('\n').map(line => {
+      if (line.includes('fetch =')) return '\tfetch = not-valid'
+      return line
+    }).join('\n')
+    fs.writeFileSync(path.normalize(`${testSrc}/clones/repo1/lib/fallback-deps-test-repo-2/.git/config`), updatedConfig)
+
+    const output = spawnSync('npm', ['ci'], {
       shell: false,
       stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
-    process.chdir(`${testSrc}`)
+
+    return output.stderr.toString()
   } catch {}
 }

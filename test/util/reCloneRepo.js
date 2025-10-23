@@ -20,9 +20,7 @@ module.exports = (listType) => {
     }
     repo1Package[listType] = {
       dir: 'lib',
-      reposFile: 'reposFile.json',
-      preferredWildcard: 'https://github.com/rooseveltframework/generator-roosevelt.git -b 0.30.0',
-      removeStaleDirectories: true
+      reposFile: 'reposFile.json'
     }
     const repo1PackageLock = {
       name: 'repo1',
@@ -48,8 +46,8 @@ module.exports = (listType) => {
     }
     const repo1FileData = {
       'fallback-deps-test-repo-2': [
-        'https://github.com/rooseveltframework/generator-roosevelt.git -b 0.30.0',
-        'https://github.com/rooseveltframework/generator-roosevelt.git -b main'
+        'https://github.com/rooseveltframework/generator-roosevelt.git',
+        'https://github.com/rooseveltframework/roosevelt.git -b 0.21.12'
       ]
     }
 
@@ -91,10 +89,12 @@ module.exports = (listType) => {
     repo1FileData['fallback-deps-test-repo-2'].shift()
     fs.writeFileSync(`${testSrc}/clones/repo1/reposFile.json`, JSON.stringify(repo1FileData))
 
-    spawnSync('npm', ['ci'], {
+    const output = spawnSync('npm', ['ci'], {
       shell: false,
       stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
+
+    return output.stdout.toString()
   } catch {}
 }

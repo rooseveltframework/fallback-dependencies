@@ -25,6 +25,10 @@ Next, add a `fallbackDependencies` entry to your `package.json` alongside your `
 - `dir` *[String]*: What directory to deposit fallback-dependencies into. Default: `fallback_dependencies`.
 - `repos` *[Object of Arrays of Strings]*: A list of dependencies similar to the `dependencies` field in package.json, but instead of supplying a string for where to fetch it, you supply an array of strings of possible locations to fetch it from. This script will attempt to fetch it from the first location, then if that fails will fallback to the second possible place to get it from, and so on until it runs out of places to try. Default: `{}`.
 - `reposFile` *[String]*: Relative path to a JSON file that contains a list of repos formatted the same as the `repos` entry. If both `repos` and `reposFile` are supplied, the two lists will be merged. Default: `{}`.
+- `preferredWildcard` *[String]*: Domain to move up to the top of the list of fallback-dependencies to try regardless of the order specified in the app's config. Must match string in the URL list. Default: `undefined`.
+- `rerunNpmCi` *[Boolean]*: Option to run `npm ci` on clones even if they already exist. Default: `false`.
+- `npmCiArgs` *[String or Array of Strings]*: Additional arguments to pass to `npm ci` command. Default: `undefined`.
+- `removeStaleDirectories` *[Boolean]*: Removes stale directories from dependency target folder. Default: `false`.
 
 Example of `reposFile` usage:
 
