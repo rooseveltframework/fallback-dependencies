@@ -16,10 +16,6 @@ function executeFallbackList (listType) {
 
   let error = ''
 
-  gitProcess.stderr.on('data', (data) => {
-    error += data.toString()
-  })
-
   gitProcess.on('error', (err) => {
     error += err.toString()
   })
@@ -122,6 +118,7 @@ function executeFallbackList (listType) {
                     })
                     if (output.status !== 0) throw output.stderr.toString()
                   } catch (e) {
+                    logger.error(e)
                     logger.error('Cannot update ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' because of a git pull error!')
                   }
                   break // stop checking fallbacks
@@ -151,7 +148,6 @@ function executeFallbackList (listType) {
                           shell: false,
                           cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                         })
-                        if (tag.status !== 0) throw tag.stderr.toString()
                         if (tag.stdout.toString().trim() === version) { // up to date with supplied tag
                           logger.log('Already up to date: ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' is already up to date because the commit\'s git tag matches the desired -b version number.')
                           if (!process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI && !pkg[listType].rerunNpmCi) break // stop checking fallbacks
@@ -174,7 +170,6 @@ function executeFallbackList (listType) {
                           shell: false,
                           cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                         })
-                        if (remote.status !== 0) throw remote.stderr.toString()
                         const fetch = spawnSync('git', ['fetch', remote.stdout.toString().trim()], {
                           shell: false,
                           cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')

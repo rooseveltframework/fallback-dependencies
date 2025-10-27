@@ -46,8 +46,8 @@ module.exports = (listType) => {
     }
     const repo1FileData = {
       'fallback-deps-test-repo-2': [
-        'failed',
-        'test'
+        'failed -b 69c50d0',
+        'test -b 0.21.12'
       ]
     }
 
