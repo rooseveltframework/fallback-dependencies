@@ -4,7 +4,7 @@ module.exports = (listType) => {
   const os = require('os')
   const { spawnSync } = require('child_process')
   const testSrc = path.resolve(__dirname, '../../test')
-  const repoList = ['repo1', 'repo2', 'repo3']
+  const repoList = ['repo1', 'repo2']
   const command = os.platform() === 'win32' ? 'where' : 'which'
   const splitPath = os.platform() === 'win32' ? process.env.PATH.split(';') : process.env.PATH.split(':')
 
@@ -38,12 +38,12 @@ module.exports = (listType) => {
         '': {
           hasInstallScript: true,
           dependencies: {
-            'fallback-dependencies': '../../../'
+            'fallback-dependencies': '../../..'
           }
         },
         '../../..': {
           version: '0.1.0',
-          license: 'CC-BY-4.0',
+          license: 'CC-BY-1.0',
           dependencies: {}
         },
         'node_modules/fallback-dependencies': {
@@ -60,26 +60,20 @@ module.exports = (listType) => {
         postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
       }
     }
-    repo2Package[listType] = {
-      dir: 'lib',
-      repos: {
-        'fallback-deps-test-repo-3': '../../../../../repos/repo3'
-      }
-    }
     const repo2PackageLock = {
-      name: 'repo1',
+      name: 'repo2',
       lockfileVersion: 3,
       requires: true,
       packages: {
         '': {
           hasInstallScript: true,
           dependencies: {
-            'fallback-dependencies': '../../../../../'
+            'fallback-dependencies': '../../../../..'
           }
         },
         '../../../../..': {
           version: '0.1.0',
-          license: 'CC-BY-4.0',
+          license: 'CC-BY-1.0',
           dependencies: {}
         },
         'node_modules/fallback-dependencies': {
@@ -88,14 +82,9 @@ module.exports = (listType) => {
         }
       }
     }
-    const repo3Package = {}
-    const repo3PackageLock = {
-      name: 'repo3',
-      lockfileVersion: 3,
-      requires: true,
-      packages: {}
-    }
-    const packageList = [[repo1Package, repo1PackageLock], [repo2Package, repo2PackageLock], [repo3Package, repo3PackageLock]]
+
+    // initialize repos
+    const packageList = [[repo1Package, repo1PackageLock], [repo2Package, repo2PackageLock]]
     for (const id in repoList) {
       if (!fs.existsSync(`${testSrc}/repos/${repoList[id]}/`)) fs.mkdirSync(`${testSrc}/repos/${repoList[id]}/`)
       spawnSync('git', ['--bare', 'init'], {

@@ -1,9 +1,9 @@
 module.exports = (listType) => {
   const fs = require('fs')
   const path = require('path')
-  const testSrc = path.resolve(__dirname, '../../test')
   const { spawnSync } = require('child_process')
-  const repoList = ['repo1', 'repo2', 'repo3']
+  const testSrc = path.resolve(__dirname, '../../test')
+  const repoList = ['repo1', 'repo2']
 
   try {
     fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
@@ -35,12 +35,12 @@ module.exports = (listType) => {
         '': {
           hasInstallScript: true,
           dependencies: {
-            'fallback-dependencies': '../../../'
+            'fallback-dependencies': '../../..'
           }
         },
         '../../..': {
           version: '0.1.0',
-          license: 'CC-BY-4.0',
+          license: 'CC-BY-1.0',
           dependencies: {}
         },
         'node_modules/fallback-dependencies': {
@@ -57,26 +57,20 @@ module.exports = (listType) => {
         postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
       }
     }
-    repo2Package[listType] = {
-      dir: 'lib',
-      repos: {
-        'fallback-deps-test-repo-3': '../../../../../repos/repo3'
-      }
-    }
     const repo2PackageLock = {
-      name: 'repo1',
+      name: 'repo2',
       lockfileVersion: 3,
       requires: true,
       packages: {
         '': {
           hasInstallScript: true,
           dependencies: {
-            'fallback-dependencies': '../../../../../'
+            'fallback-dependencies': '../../../../..'
           }
         },
         '../../../../..': {
           version: '0.1.0',
-          license: 'CC-BY-4.0',
+          license: 'CC-BY-1.0',
           dependencies: {}
         },
         'node_modules/fallback-dependencies': {
@@ -85,14 +79,9 @@ module.exports = (listType) => {
         }
       }
     }
-    const repo3Package = {}
-    const repo3PackageLock = {
-      name: 'repo3',
-      lockfileVersion: 3,
-      requires: true,
-      packages: {}
-    }
-    const packageList = [[repo1Package, repo1PackageLock], [repo2Package, repo2PackageLock], [repo3Package, repo3PackageLock]]
+
+    // initialize repos
+    const packageList = [[repo1Package, repo1PackageLock], [repo2Package, repo2PackageLock]]
     for (const id in repoList) {
       if (!fs.existsSync(`${testSrc}/repos/${repoList[id]}/`)) fs.mkdirSync(`${testSrc}/repos/${repoList[id]}/`)
       spawnSync('git', ['--bare', 'init'], {
@@ -125,6 +114,7 @@ module.exports = (listType) => {
       })
     }
 
+    // edit repo1 package.json to point to invalid version and attempt to clone
     repo1Package = {
       dependencies: {
         'fallback-dependencies': '../../../'
@@ -141,9 +131,7 @@ module.exports = (listType) => {
         ]
       }
     }
-
     fs.writeFileSync(`${testSrc}/clones/repo1/package.json`, JSON.stringify(repo1Package))
-
     const output = spawnSync('npm', ['ci'], {
       shell: false,
       stdio: 'pipe', // hide output from git

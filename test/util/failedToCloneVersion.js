@@ -51,6 +51,7 @@ module.exports = (listType) => {
       ]
     }
 
+    // initialize repos
     if (!fs.existsSync(`${testSrc}/repos/repo1/`)) fs.mkdirSync(`${testSrc}/repos/repo1/`)
     spawnSync('git', ['--bare', 'init'], {
       shell: false,
@@ -80,6 +81,7 @@ module.exports = (listType) => {
       stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
+
     spawnSync('npm', ['ci'], {
       shell: false,
       stdio: 'pipe', // hide output from git

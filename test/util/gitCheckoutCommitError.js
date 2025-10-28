@@ -1,9 +1,9 @@
 module.exports = (listType) => {
   const fs = require('fs')
   const path = require('path')
-  const testSrc = path.resolve(__dirname, '../../test')
   const { spawnSync } = require('child_process')
-  const repoList = ['repo1', 'repo2', 'repo3']
+  const testSrc = path.resolve(__dirname, '../../test')
+  const repoList = ['repo1', 'repo2']
 
   try {
     fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
@@ -45,35 +45,28 @@ module.exports = (listType) => {
         }
       }
     }
-    const repo1FileData = {
+    let repo1FileData = {
       'fallback-deps-test-repo-2': [
-        'https://github.com/rooseveltframework/generator-roosevelt.git -b 0.21.7',
-        'https://github.com/rooseveltframework/generator-roosevelt.git -b 6c2cb30'
+        '../../../repos/repo2'
       ]
     }
     const repo2Package = {
       dependencies: {
-        'fallback-dependencies': '../../../../../../'
+        'fallback-dependencies': '../../../../../'
       },
       scripts: {
         postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
       }
     }
-    repo2Package[listType] = {
-      dir: 'lib',
-      repos: {
-        'fallback-deps-test-repo-3': '../../../../../repos/repo3'
-      }
-    }
     const repo2PackageLock = {
-      name: 'repo1',
+      name: 'repo2',
       lockfileVersion: 3,
       requires: true,
       packages: {
         '': {
           hasInstallScript: true,
           dependencies: {
-            'fallback-dependencies': '../../../../../'
+            'fallback-dependencies': '../../../../..'
           }
         },
         '../../../../..': {
@@ -87,15 +80,9 @@ module.exports = (listType) => {
         }
       }
     }
-    const repo3Package = {}
-    const repo3PackageLock = {
-      name: 'repo3',
-      lockfileVersion: 3,
-      requires: true,
-      packages: {}
-    }
 
-    const packageList = [[repo1Package, repo1PackageLock], [repo2Package, repo2PackageLock], [repo3Package, repo3PackageLock]]
+    // initialize repos
+    const packageList = [[repo1Package, repo1PackageLock], [repo2Package, repo2PackageLock]]
     for (const id in repoList) {
       if (!fs.existsSync(`${testSrc}/repos/${repoList[id]}/`)) fs.mkdirSync(`${testSrc}/repos/${repoList[id]}/`)
       spawnSync('git', ['--bare', 'init'], {
@@ -127,15 +114,31 @@ module.exports = (listType) => {
         cwd: path.normalize(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
       })
     }
+
+    // add 1.0.0 and 1.0.1 tags and attempt to clone repo while specifying 1.0.0
+    spawnSync('git', ['tag', '1.0.0'], {
+      shell: false,
+      stdio: 'pipe', // hide output from git
+      cwd: path.normalize(`${testSrc}/clones/repo2`, '') // where we're cloning the repo to
+    })
+    spawnSync('git', ['push', '--tags'], {
+      shell: false,
+      stdio: 'pipe', // hide output from git
+      cwd: path.normalize(`${testSrc}/clones/repo2`, '') // where we're cloning the repo to
+    })
+    repo1FileData = {
+      'fallback-deps-test-repo-2': [
+        '../../../repos/repo2 -b 1.0.0'
+      ]
+    }
+    fs.writeFileSync(`${testSrc}/clones/repo1/reposFile.json`, JSON.stringify(repo1FileData))
     spawnSync('npm', ['ci'], {
       shell: false,
       stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
 
-    repo1FileData['fallback-deps-test-repo-2'].shift()
-    fs.writeFileSync(`${testSrc}/clones/repo1/reposFile.json`, JSON.stringify(repo1FileData))
-
+    // edit git config to trigger error
     const config = fs.readFileSync(path.normalize(`${testSrc}/clones/repo1/lib/fallback-deps-test-repo-2/.git/config`)).toString()
     const updatedConfig = config.split('\n').map(line => {
       if (line.includes('bare =')) return '\tbare = true'
@@ -143,6 +146,18 @@ module.exports = (listType) => {
     }).join('\n')
     fs.writeFileSync(path.normalize(`${testSrc}/clones/repo1/lib/fallback-deps-test-repo-2/.git/config`), updatedConfig)
 
+    // get commit id and attempt to clone repo while specifying it
+    const commit = spawnSync('git', ['log', '--oneline'], {
+      shell: false,
+      stdio: 'pipe', // hide output from git
+      cwd: path.normalize(`${testSrc}/repos/repo2`, '') // where we're cloning the repo to
+    })
+    repo1FileData = {
+      'fallback-deps-test-repo-2': [
+        `../../../repos/repo2 -b ${commit.stdout.toString().split(' ')[0].trim()}`
+      ]
+    }
+    fs.writeFileSync(`${testSrc}/clones/repo1/reposFile.json`, JSON.stringify(repo1FileData))
     const output = spawnSync('npm', ['ci'], {
       shell: false,
       stdio: 'pipe', // hide output from git

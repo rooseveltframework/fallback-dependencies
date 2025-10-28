@@ -118,8 +118,8 @@ function executeFallbackList (listType) {
                     })
                     if (output.status !== 0) throw output.stderr.toString()
                   } catch (e) {
-                    logger.error(e)
                     logger.error('Cannot update ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' because of a git pull error!')
+                    logger.error(e)
                   }
                   break // stop checking fallbacks
                 } else {
@@ -267,9 +267,9 @@ function executeFallbackList (listType) {
             }
             break // if it successfully clones, skip trying the fallback
           } catch (e) {
-            logger.error(e)
             if (fallbacks.length === (parseInt(i) + 1)) {
               logger.error('Unable to resolve dependency ' + dependency + ' — all fallbacks failed to clone!\n')
+              logger.error(e)
               failedDependencies.push(dependency)
               failedToClone++
             } else {

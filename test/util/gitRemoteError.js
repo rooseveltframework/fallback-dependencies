@@ -1,9 +1,9 @@
 module.exports = (listType) => {
   const fs = require('fs')
   const path = require('path')
-  const testSrc = path.resolve(__dirname, '../../test')
   const { spawnSync } = require('child_process')
-  const repoList = ['repo1', 'repo2', 'repo3']
+  const testSrc = path.resolve(__dirname, '../../test')
+  const repoList = ['repo1', 'repo2']
 
   try {
     fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
@@ -52,27 +52,21 @@ module.exports = (listType) => {
     }
     const repo2Package = {
       dependencies: {
-        'fallback-dependencies': '../../../../../../'
+        'fallback-dependencies': '../../../../../'
       },
       scripts: {
         postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
       }
     }
-    repo2Package[listType] = {
-      dir: 'lib',
-      repos: {
-        'fallback-deps-test-repo-3': '../../../../../repos/repo3'
-      }
-    }
     const repo2PackageLock = {
-      name: 'repo1',
+      name: 'repo2',
       lockfileVersion: 3,
       requires: true,
       packages: {
         '': {
           hasInstallScript: true,
           dependencies: {
-            'fallback-dependencies': '../../../../../'
+            'fallback-dependencies': '../../../../..'
           }
         },
         '../../../../..': {
@@ -86,15 +80,9 @@ module.exports = (listType) => {
         }
       }
     }
-    const repo3Package = {}
-    const repo3PackageLock = {
-      name: 'repo3',
-      lockfileVersion: 3,
-      requires: true,
-      packages: {}
-    }
 
-    const packageList = [[repo1Package, repo1PackageLock], [repo2Package, repo2PackageLock], [repo3Package, repo3PackageLock]]
+    // initialize repos
+    const packageList = [[repo1Package, repo1PackageLock], [repo2Package, repo2PackageLock]]
     for (const id in repoList) {
       if (!fs.existsSync(`${testSrc}/repos/${repoList[id]}/`)) fs.mkdirSync(`${testSrc}/repos/${repoList[id]}/`)
       spawnSync('git', ['--bare', 'init'], {
@@ -126,28 +114,27 @@ module.exports = (listType) => {
         cwd: path.normalize(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
       })
     }
+
     spawnSync('npm', ['ci'], {
       shell: false,
       stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
 
-    // get commit id
+    // get commit id and update reposFile
     const commit = spawnSync('git', ['log', '--oneline'], {
       shell: false,
       stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo2`, '') // where we're cloning the repo to
     })
-    const commitID = commit.stdout.toString().split(' ')[0]
-
     repo1FileData = {
       'fallback-deps-test-repo-2': [
-        `../../../clones/repo2 -b ${commitID}`
+        `../../../clones/repo2 -b ${commit.stdout.toString().split(' ')[0].trim()}`
       ]
     }
-
     fs.writeFileSync(`${testSrc}/clones/repo1/reposFile.json`, JSON.stringify(repo1FileData))
 
+    // edit git config to trigger error
     const config = fs.readFileSync(path.normalize(`${testSrc}/clones/repo1/lib/fallback-deps-test-repo-2/.git/config`)).toString()
     const updatedConfig = config.split('\n').map(line => {
       if (line.includes('url =')) return '\turl = not-valid'
@@ -157,7 +144,7 @@ module.exports = (listType) => {
 
     const output = spawnSync('npm', ['ci'], {
       shell: false,
-      stdio: 'inherit', // hide output from git
+      stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
 

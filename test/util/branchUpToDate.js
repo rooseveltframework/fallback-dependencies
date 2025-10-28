@@ -1,8 +1,8 @@
 module.exports = (listType) => {
   const fs = require('fs')
   const path = require('path')
-  const testSrc = path.resolve(__dirname, '../../test')
   const { spawnSync } = require('child_process')
+  const testSrc = path.resolve(__dirname, '../../test')
   const repoList = ['repo1', 'repo2', 'repo3']
 
   try {
@@ -40,7 +40,7 @@ module.exports = (listType) => {
         },
         '../../..': {
           version: '0.1.0',
-          license: 'CC-BY-4.0',
+          license: 'CC-BY-1.0',
           dependencies: {}
         },
         'node_modules/fallback-dependencies': {
@@ -64,19 +64,19 @@ module.exports = (listType) => {
       }
     }
     const repo2PackageLock = {
-      name: 'repo1',
+      name: 'repo2',
       lockfileVersion: 3,
       requires: true,
       packages: {
         '': {
           hasInstallScript: true,
           dependencies: {
-            'fallback-dependencies': '../../../../../'
+            'fallback-dependencies': '../../../../..'
           }
         },
         '../../../../..': {
           version: '0.1.0',
-          license: 'CC-BY-4.0',
+          license: 'CC-BY-1.0',
           dependencies: {}
         },
         'node_modules/fallback-dependencies': {
@@ -92,6 +92,8 @@ module.exports = (listType) => {
       requires: true,
       packages: {}
     }
+
+    // initialize repos
     const packageList = [[repo1Package, repo1PackageLock], [repo2Package, repo2PackageLock], [repo3Package, repo3PackageLock]]
     for (const id in repoList) {
       if (!fs.existsSync(`${testSrc}/repos/${repoList[id]}/`)) fs.mkdirSync(`${testSrc}/repos/${repoList[id]}/`)
@@ -124,6 +126,7 @@ module.exports = (listType) => {
         cwd: path.normalize(`${testSrc}/clones/${repoList[id]}`, '') // where we're cloning the repo to
       })
     }
+
     spawnSync('npm', ['ci'], {
       shell: false,
       stdio: 'pipe', // hide output from git
