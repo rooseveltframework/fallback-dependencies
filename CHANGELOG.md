@@ -1,3 +1,12 @@
+## 1.1.0
+
+- Added option to pass CLI arguments to `npm ci` via `FALLBACK_DEPENDENCIES_NPM_CI_ARGS` environment variable or `npmCiArgs` in `fallbackDependencies` package.json config.
+- Added option to run `npm ci` on clones even if they already exist via `FALLBACK_DEPENDENCIES_RERUN_NPM_CI` environment variable or `rerunNpmCi` in `fallbackDependencies` package.json config.
+- Added option to clear out stale directories from dependency target folder via `FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES` environment variable or `removeStaleDirectories` in `fallbackDependencies` package.json config.
+- Added option to set `FALLBACK_DEPENDENCIES_PREFERRED_WILDCARD` value in `fallbackDependencies` package.json config via `preferredWildcard`.
+- Added support for git cloning / pulling from non-tagged commits.
+- Updated various dependencies.
+
 ## 1.0.3
 
 - Fixed bug that resulted in hard to understand errors if `git` wasn't functioning properly on your system.

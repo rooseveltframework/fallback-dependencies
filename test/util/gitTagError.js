@@ -21,8 +21,7 @@ module.exports = (listType) => {
     }
     repo1Package[listType] = {
       dir: 'lib',
-      reposFile: 'reposFile.json',
-      npmCiArgs: '--no-audit' // covers if statement specific to npmCiArgs
+      reposFile: 'reposFile.json'
     }
     const repo1PackageLock = {
       name: 'repo1',
@@ -116,13 +115,8 @@ module.exports = (listType) => {
       })
     }
 
-    // add 1.0.0 and 1.0.1 tags and attempt to clone repo while specifying 1.0.0
+    // add 1.0.0 tag and attempt to clone repo while specifying it
     spawnSync('git', ['tag', '1.0.0'], {
-      shell: false,
-      stdio: 'pipe', // hide output from git
-      cwd: path.normalize(`${testSrc}/clones/repo2`, '') // where we're cloning the repo to
-    })
-    spawnSync('git', ['tag', '1.0.1'], {
       shell: false,
       stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo2`, '') // where we're cloning the repo to
@@ -144,17 +138,15 @@ module.exports = (listType) => {
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
 
-    // attempt to clone ../../../repos/repo2 -b 1.0.1
-    repo1FileData = {
-      'fallback-deps-test-repo-2': [
-        '../../../repos/repo2 -b 1.0.1'
-      ]
-    }
-    fs.writeFileSync(`${testSrc}/clones/repo1/reposFile.json`, JSON.stringify(repo1FileData))
-    spawnSync('npm', ['ci'], {
+    // edit git packed-refs to trigger error
+    fs.writeFileSync(path.normalize(`${testSrc}/clones/repo1/lib/fallback-deps-test-repo-2/.git/packed-refs`), 'invalid content')
+
+    const output = spawnSync('npm', ['ci'], {
       shell: false,
       stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
+
+    return output.stderr.toString()
   } catch {}
 }

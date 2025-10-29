@@ -21,8 +21,7 @@ module.exports = (listType) => {
     }
     repo1Package[listType] = {
       dir: 'lib',
-      reposFile: 'reposFile.json',
-      npmCiArgs: '--no-audit' // covers if statement specific to npmCiArgs
+      reposFile: 'reposFile.json'
     }
     const repo1PackageLock = {
       name: 'repo1',
@@ -53,7 +52,7 @@ module.exports = (listType) => {
     }
     const repo2Package = {
       dependencies: {
-        'fallback-dependencies': '../../../../../'
+        'fallback-dependencies': 'invalid-path-to-dep' // to cover lines 264-266
       },
       scripts: {
         postinstall: 'node node_modules/fallback-dependencies/fallback-dependencies.js'
@@ -116,38 +115,15 @@ module.exports = (listType) => {
       })
     }
 
-    // add 1.0.0 and 1.0.1 tags and attempt to clone repo while specifying 1.0.0
-    spawnSync('git', ['tag', '1.0.0'], {
+    // attempt to clone repo while specifying commit id
+    const commit = spawnSync('git', ['log', '--oneline'], {
       shell: false,
       stdio: 'pipe', // hide output from git
-      cwd: path.normalize(`${testSrc}/clones/repo2`, '') // where we're cloning the repo to
-    })
-    spawnSync('git', ['tag', '1.0.1'], {
-      shell: false,
-      stdio: 'pipe', // hide output from git
-      cwd: path.normalize(`${testSrc}/clones/repo2`, '') // where we're cloning the repo to
-    })
-    spawnSync('git', ['push', '--tags'], {
-      shell: false,
-      stdio: 'pipe', // hide output from git
-      cwd: path.normalize(`${testSrc}/clones/repo2`, '') // where we're cloning the repo to
+      cwd: path.normalize(`${testSrc}/repos/repo2`, '') // where we're cloning the repo to
     })
     repo1FileData = {
       'fallback-deps-test-repo-2': [
-        '../../../repos/repo2 -b 1.0.0'
-      ]
-    }
-    fs.writeFileSync(`${testSrc}/clones/repo1/reposFile.json`, JSON.stringify(repo1FileData))
-    spawnSync('npm', ['ci'], {
-      shell: false,
-      stdio: 'pipe', // hide output from git
-      cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
-    })
-
-    // attempt to clone ../../../repos/repo2 -b 1.0.1
-    repo1FileData = {
-      'fallback-deps-test-repo-2': [
-        '../../../repos/repo2 -b 1.0.1'
+        `../../../repos/repo2 -b ${commit.stdout.toString().split(' ')[0].trim()}`
       ]
     }
     fs.writeFileSync(`${testSrc}/clones/repo1/reposFile.json`, JSON.stringify(repo1FileData))

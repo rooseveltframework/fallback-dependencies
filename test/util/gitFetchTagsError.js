@@ -21,8 +21,7 @@ module.exports = (listType) => {
     }
     repo1Package[listType] = {
       dir: 'lib',
-      reposFile: 'reposFile.json',
-      npmCiArgs: '--no-audit' // covers if statement specific to npmCiArgs
+      reposFile: 'reposFile.json'
     }
     const repo1PackageLock = {
       name: 'repo1',
@@ -144,6 +143,14 @@ module.exports = (listType) => {
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
 
+    // edit git config to trigger error
+    const config = fs.readFileSync(path.normalize(`${testSrc}/clones/repo1/lib/fallback-deps-test-repo-2/.git/config`)).toString()
+    const updatedConfig = config.split('\n').map(line => {
+      if (line.includes('fetch =')) return '\tfetch = not-valid'
+      return line
+    }).join('\n')
+    fs.writeFileSync(path.normalize(`${testSrc}/clones/repo1/lib/fallback-deps-test-repo-2/.git/config`), updatedConfig)
+
     // attempt to clone ../../../repos/repo2 -b 1.0.1
     repo1FileData = {
       'fallback-deps-test-repo-2': [
@@ -151,10 +158,12 @@ module.exports = (listType) => {
       ]
     }
     fs.writeFileSync(`${testSrc}/clones/repo1/reposFile.json`, JSON.stringify(repo1FileData))
-    spawnSync('npm', ['ci'], {
+    const output = spawnSync('npm', ['ci'], {
       shell: false,
       stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
+
+    return output.stderr.toString()
   } catch {}
 }

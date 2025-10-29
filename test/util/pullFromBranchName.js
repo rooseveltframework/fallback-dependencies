@@ -22,7 +22,8 @@ module.exports = (listType) => {
     repo1Package[listType] = {
       dir: 'lib',
       reposFile: 'reposFile.json',
-      npmCiArgs: '--no-audit' // covers if statement specific to npmCiArgs
+      preferredWildcard: '../../../repos/repo2',
+      removeStaleDirectories: true
     }
     const repo1PackageLock = {
       name: 'repo1',
@@ -116,13 +117,8 @@ module.exports = (listType) => {
       })
     }
 
-    // add 1.0.0 and 1.0.1 tags and attempt to clone repo while specifying 1.0.0
+    // add 1.0.0 tag and attempt to clone repo while specifying it
     spawnSync('git', ['tag', '1.0.0'], {
-      shell: false,
-      stdio: 'pipe', // hide output from git
-      cwd: path.normalize(`${testSrc}/clones/repo2`, '') // where we're cloning the repo to
-    })
-    spawnSync('git', ['tag', '1.0.1'], {
       shell: false,
       stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo2`, '') // where we're cloning the repo to
@@ -144,10 +140,10 @@ module.exports = (listType) => {
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
 
-    // attempt to clone ../../../repos/repo2 -b 1.0.1
+    // attempt to clone repo while specifying branch name
     repo1FileData = {
       'fallback-deps-test-repo-2': [
-        '../../../repos/repo2 -b 1.0.1'
+        '../../../repos/repo2 -b master'
       ]
     }
     fs.writeFileSync(`${testSrc}/clones/repo1/reposFile.json`, JSON.stringify(repo1FileData))
