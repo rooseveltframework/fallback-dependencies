@@ -5,7 +5,7 @@
 - Added option to clear out stale directories from dependency target folder via `FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES` environment variable or `removeStaleDirectories` in `fallbackDependencies` package.json config.
 - Added option to set `FALLBACK_DEPENDENCIES_PREFERRED_WILDCARD` value in `fallbackDependencies` package.json config via `preferredWildcard`.
 - Added support for git cloning / pulling from non-tagged commits.
-- Updated tests.
+- Updated various dependencies.
 
 ## 1.0.3
 
