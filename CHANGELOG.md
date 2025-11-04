@@ -1,3 +1,8 @@
+## 1.1.1
+
+- Fixed bug where `npm ci` was not running on git pulls/checkouts when `FALLBACK_DEPENDENCIES_RERUN_NPM_CI` or `rerunNpmCi` is set.
+- Fixed race condition where "Process killed due to timeout" error was being thrown randomly.
+
 ## 1.1.0
 
 - Added option to pass CLI arguments to `npm ci` via `FALLBACK_DEPENDENCIES_NPM_CI_ARGS` environment variable or `npmCiArgs` in `fallbackDependencies` package.json config.
