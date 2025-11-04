@@ -6,6 +6,7 @@ const path = require('path')
 const appendingDirectOnly = path.join(__dirname, './util/appendingDirectOnly.js')
 const basicFallbackDependencies = path.join(__dirname, './util/basicFallbackDependencies.js')
 const branchUpToDate = path.join(__dirname, './util/branchUpToDate.js')
+const checkoutNonTaggedCommit = path.join(__dirname, './util/checkoutNonTaggedCommit.js')
 const cloningNonTaggedCommit = path.join(__dirname, './util/cloningNonTaggedCommit.js')
 const cloningSpecificGitTag = path.join(__dirname, './util/cloningSpecificGitTag.js')
 const createGitPullError = path.join(__dirname, './util/createGitPullError.js')
@@ -128,6 +129,18 @@ describe('universal fallback-dependencies tests', () => {
       fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
       fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
       require(desiredVersion)(listTypes.pop())
+      assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib')), './clones/repo1/lib does not exist')
+      assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2')), './clones/repo1/lib/fallback-deps-test-repo-2 does not exist')
+      assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2/.git')), './clones/repo1/lib/fallback-deps-test-repo-2/.git does not exist')
+    }
+  })
+
+  it('should checkout a non-tagged commit', () => {
+    const listTypes = ['fallbackDependencies', 'fallbackDevDependencies']
+    while (listTypes.length) {
+      fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
+      fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
+      require(checkoutNonTaggedCommit)(listTypes.pop())
       assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib')), './clones/repo1/lib does not exist')
       assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2')), './clones/repo1/lib/fallback-deps-test-repo-2 does not exist')
       assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2/.git')), './clones/repo1/lib/fallback-deps-test-repo-2/.git does not exist')

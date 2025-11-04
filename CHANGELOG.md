@@ -1,3 +1,7 @@
+## 1.1.2
+
+- Altered setting of `FALLBACK_DEPENDENCIES_RERUN_NPM_CI` or `rerunNpmCi` to only be relevant in instances when dependency has not been updated. e.g. not relevant on git pulls/checkouts.
+
 ## 1.1.1
 
 - Fixed bug where `npm ci` was not running on git pulls/checkouts when `FALLBACK_DEPENDENCIES_RERUN_NPM_CI` or `rerunNpmCi` is set.

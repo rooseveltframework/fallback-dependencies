@@ -21,7 +21,8 @@ module.exports = (listType) => {
     }
     repo1Package[listType] = {
       dir: 'lib',
-      reposFile: 'reposFile.json'
+      reposFile: 'reposFile.json',
+      npmCiArgs: ['--no-audit', '--silent']
     }
     const repo1PackageLock = {
       name: 'repo1',
@@ -115,53 +116,21 @@ module.exports = (listType) => {
       })
     }
 
-    // add 1.0.0 tag
-    spawnSync('git', ['tag', '1.0.0'], {
-      shell: false,
-      stdio: 'pipe', // hide output from git
-      cwd: path.normalize(`${testSrc}/clones/repo2`, '') // where we're cloning the repo to
-    })
-    spawnSync('git', ['push', '--tags'], {
-      shell: false,
-      stdio: 'pipe', // hide output from git
-      cwd: path.normalize(`${testSrc}/clones/repo2`, '') // where we're cloning the repo to
-    })
-
-    // push commit to master branch to make 1.0.0 and branch out of sync
-    fs.writeFileSync(`${testSrc}/clones/repo2/commit.txt`, 'this is a commit')
-    spawnSync('git', ['add', '.'], {
-      shell: false,
-      stdio: 'pipe', // hide output from git
-      cwd: path.normalize(`${testSrc}/clones/repo2`, '') // where we're cloning the repo to
-    })
-    spawnSync('git', ['commit', '-m', '"commit"'], {
-      shell: false,
-      stdio: 'pipe', // hide output from git
-      cwd: path.normalize(`${testSrc}/clones/repo2`, '') // where we're cloning the repo to
-    })
-    spawnSync('git', ['push'], {
-      shell: false,
-      stdio: 'pipe', // hide output from git
-      cwd: path.normalize(`${testSrc}/clones/repo2`, '') // where we're cloning the repo to
-    })
-
-    // attempt to clone repo while specifying 1.0.0 tag
-    repo1FileData = {
-      'fallback-deps-test-repo-2': [
-        '../../../repos/repo2 -b 1.0.0'
-      ]
-    }
-    fs.writeFileSync(`${testSrc}/clones/repo1/reposFile.json`, JSON.stringify(repo1FileData))
     spawnSync('npm', ['ci'], {
       shell: false,
       stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo1`, '') // where we're cloning the repo to
     })
 
-    // attempt to clone repo while specifying branch name
+    // get commit id and attempt to clone repo while specifying it
+    const commit = spawnSync('git', ['log', '--oneline'], {
+      shell: false,
+      stdio: 'pipe', // hide output from git
+      cwd: path.normalize(`${testSrc}/repos/repo2`, '') // where we're cloning the repo to
+    })
     repo1FileData = {
       'fallback-deps-test-repo-2': [
-        '../../../repos/repo2 -b master'
+        `../../../repos/repo2 -b ${commit.stdout.toString().split(' ')[0].trim()}`
       ]
     }
     fs.writeFileSync(`${testSrc}/clones/repo1/reposFile.json`, JSON.stringify(repo1FileData))
