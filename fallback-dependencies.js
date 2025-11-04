@@ -94,9 +94,10 @@ function executeFallbackList (listTypes) {
             fallbacks = [fallbacks] // coerce to an array of one member if given a string
           }
           for (const i in fallbacks) {
-            const rerunNpmCi = process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI || pkg[listType].rerunNpmCi
             let url = fallbacks[i]
+            const rerunNpmCi = process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI || pkg[listType].rerunNpmCi
             let reClone = false
+            let updatedDep = false
             let skipDeps = false
             if (url.slice(-11) === ' -skip-deps') {
               url = url.slice(0, -11)
@@ -119,11 +120,11 @@ function executeFallbackList (listTypes) {
                         cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                       })
                       if (output.status !== 0) throw output.stderr.toString()
+                      updatedDep = true
                     } catch (e) {
                       logger.error('Cannot update ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' because of a git pull error!')
                       logger.error(e)
                     }
-                    break // stop checking fallbacks
                   } else {
                     const parts = url.split(' ')
                     if (parts.includes('-b')) {
@@ -165,7 +166,7 @@ function executeFallbackList (listTypes) {
                             })
                             if (checkout.status !== 0) throw checkout.stderr.toString()
                             logger.log(`Successfully checked out tag ${version}.`)
-                            if (!rerunNpmCi) break // stop checking fallbacks
+                            updatedDep = true
                           }
                         } else { // version supplied is not a tag
                           const remote = spawnSync('git', ['remote'], {
@@ -188,6 +189,7 @@ function executeFallbackList (listTypes) {
                             })
                             if (checkout.status !== 0) throw checkout.stderr.toString()
                             logger.log(`Successfully checked out commit ${version}.`)
+                            updatedDep = true
                           } else if (commitsBehind.stdout.toString() > 0) { // git pull if behind
                             logger.log('There are new commits available.')
                             logger.log('Running git pull on ' + fallbackDependenciesDir + '/' + dependency + '...')
@@ -196,15 +198,18 @@ function executeFallbackList (listTypes) {
                               cwd: path.resolve(fallbackDependenciesDir + '/' + dependency, '')
                             })
                             if (pull.status !== 0) throw pull.stderr.toString()
-                          } else logger.log('Already up to date: ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' is already up to date because the commit\'s branch name matches the desired -b branch name.')
-                          if (!rerunNpmCi) break // stop checking fallbacks
+                            updatedDep = true
+                          } else {
+                            logger.log('Already up to date: ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' is already up to date because the commit\'s branch name matches the desired -b branch name.')
+                            if (!rerunNpmCi) break // stop checking fallbacks
+                          }
                         }
                       }
                     } else {
                       logger.error('Cannot update ' + fallbackDependenciesDir + '/' + dependency + ' from ' + url + ' because it appears to be a different git repo or from a different remote!')
                     }
                   }
-                  if (!reClone && !rerunNpmCi) continue // try the next fallback
+                  if (!reClone && !rerunNpmCi && !updatedDep) continue // try the next fallback
                 }
               }
               if (reClone || !fs.existsSync(fallbackDependenciesDir + '/' + dependency)) {
