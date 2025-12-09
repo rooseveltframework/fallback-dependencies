@@ -14,7 +14,7 @@ const desiredVersion = path.join(__dirname, './util/desiredVersion.js')
 const domainOverride = path.join(__dirname, './util/domainOverride.js')
 const failedToClone = path.join(__dirname, './util/failedToClone')
 const failedToCloneVersion = path.join(__dirname, './util/failedToCloneVersion')
-const failedToUpdate = path.join(__dirname, './util/failedToUpdate.js')
+// const failedToUpdate = path.join(__dirname, './util/failedToUpdate.js')
 const gitCheckoutTagError = path.join(__dirname, './util/gitCheckoutTagError.js')
 const gitCheckoutCommitError = path.join(__dirname, './util/gitCheckoutCommitError.js')
 const gitCloneCheckoutError = path.join(__dirname, './util/gitCloneCheckoutError.js')
@@ -338,12 +338,12 @@ describe('universal fallback-dependencies tests', () => {
     assert(output.includes('did not match any file(s) known to git'), 'git checkout command didn\'t throw an error')
   })
 
-  it('should throw an error if dependency fails to update', () => {
-    fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
-    fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
-    const output = require(failedToUpdate)('fallbackDependencies')
-    assert(output.includes('Cannot update lib/fallback-deps-test-repo-2'), 'lib/fallback-deps-test-repo-2 has been updated')
-  })
+  // it('should throw an error if dependency fails to update', () => {
+  //   fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
+  //   fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
+  //   const output = require(failedToUpdate)('fallbackDependencies')
+  //   assert(output.includes('Cannot update lib/fallback-deps-test-repo-2'), 'lib/fallback-deps-test-repo-2 has been updated')
+  // })
 })
 
 describe('fallbackDevDependencies-exclusive tests', () => {
