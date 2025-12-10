@@ -7,18 +7,18 @@ const appendingDirectOnly = path.join(__dirname, './util/appendingDirectOnly.js'
 const basicFallbackDependencies = path.join(__dirname, './util/basicFallbackDependencies.js')
 const branchUpToDate = path.join(__dirname, './util/branchUpToDate.js')
 const checkoutNonTaggedCommit = path.join(__dirname, './util/checkoutNonTaggedCommit.js')
+const checkoutHeadBranch = path.join(__dirname, './util/checkoutHeadBranch.js')
 const cloningNonTaggedCommit = path.join(__dirname, './util/cloningNonTaggedCommit.js')
 const cloningSpecificGitTag = path.join(__dirname, './util/cloningSpecificGitTag.js')
-const createGitPullError = path.join(__dirname, './util/createGitPullError.js')
 const desiredVersion = path.join(__dirname, './util/desiredVersion.js')
 const domainOverride = path.join(__dirname, './util/domainOverride.js')
 const failedToClone = path.join(__dirname, './util/failedToClone')
 const failedToCloneVersion = path.join(__dirname, './util/failedToCloneVersion')
-// const failedToUpdate = path.join(__dirname, './util/failedToUpdate.js')
 const gitCheckoutTagError = path.join(__dirname, './util/gitCheckoutTagError.js')
 const gitCheckoutCommitError = path.join(__dirname, './util/gitCheckoutCommitError.js')
 const gitCloneCheckoutError = path.join(__dirname, './util/gitCloneCheckoutError.js')
 const gitError = path.join(__dirname, './util/gitError.js')
+const gitFetchHeadError = path.join(__dirname, './util/gitFetchHeadError.js')
 const gitFetchTagsError = path.join(__dirname, './util/gitFetchTagsError.js')
 const gitFetchRemoteError = path.join(__dirname, './util/gitFetchRemoteError.js')
 const gitPullRemoteBranchError = path.join(__dirname, './util/gitPullRemoteBranchError.js')
@@ -28,7 +28,10 @@ const notGitRepo = path.join(__dirname, './util/notGitRepo.js')
 const pullFromBranchName = path.join(__dirname, './util/pullFromBranchName.js')
 const pullFromNonTaggedCommit = path.join(__dirname, './util/pullFromNonTaggedCommit.js')
 const reCloneRepo = path.join(__dirname, './util/reCloneRepo.js')
+const reCloneRepoWithBranch = path.join(__dirname, './util/reCloneRepoWithBranch.js')
+const reCloneRepoWithCommitId = path.join(__dirname, './util/reCloneRepoWithCommitId.js')
 const reposFileInUse = path.join(__dirname, './util/reposFileInUse.js')
+const repoUpToDateWithCommitId = path.join(__dirname, './util/repoUpToDateWithCommitId.js')
 const specificFallbackDependency = path.join(__dirname, './util/specificFallbackDependency.js')
 process.env.FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES = true
 
@@ -123,7 +126,21 @@ describe('universal fallback-dependencies tests', () => {
     delete process.env.FALLBACK_DEPENDENCIES_NPM_CI_ARGS // remove env var for remaining tests
   })
 
+  it('should checkout head branch if url supplied doesn\'t specify -b version', () => {
+    process.env.FALLBACK_DEPENDENCIES_ENABLE_CHECKOUT = true
+    const listTypes = ['fallbackDependencies', 'fallbackDevDependencies']
+    while (listTypes.length) {
+      fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
+      fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
+      require(checkoutHeadBranch)(listTypes.pop())
+      assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib')), './clones/repo1/lib does not exist')
+      assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2')), './clones/repo1/lib/fallback-deps-test-repo-2 does not exist')
+    }
+    delete process.env.FALLBACK_DEPENDENCIES_ENABLE_CHECKOUT
+  })
+
   it('should checkout desired -b version number', () => {
+    process.env.FALLBACK_DEPENDENCIES_ENABLE_CHECKOUT = true
     const listTypes = ['fallbackDependencies', 'fallbackDevDependencies']
     while (listTypes.length) {
       fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
@@ -133,6 +150,7 @@ describe('universal fallback-dependencies tests', () => {
       assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2')), './clones/repo1/lib/fallback-deps-test-repo-2 does not exist')
       assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2/.git')), './clones/repo1/lib/fallback-deps-test-repo-2/.git does not exist')
     }
+    delete process.env.FALLBACK_DEPENDENCIES_ENABLE_CHECKOUT
   })
 
   it('should checkout a non-tagged commit', () => {
@@ -145,6 +163,49 @@ describe('universal fallback-dependencies tests', () => {
       assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2')), './clones/repo1/lib/fallback-deps-test-repo-2 does not exist')
       assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2/.git')), './clones/repo1/lib/fallback-deps-test-repo-2/.git does not exist')
     }
+  })
+
+  it('should reclone repo if desired -b version number differs from current version number', () => {
+    const listTypes = ['fallbackDependencies', 'fallbackDevDependencies']
+    while (listTypes.length) {
+      fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
+      fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
+      require(desiredVersion)(listTypes.pop())
+      assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib')), './clones/repo1/lib does not exist')
+      assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2')), './clones/repo1/lib/fallback-deps-test-repo-2 does not exist')
+      assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2/.git')), './clones/repo1/lib/fallback-deps-test-repo-2/.git does not exist')
+    }
+  })
+
+  it('should reclone repo if -b commit id is supplied', () => {
+    const listTypes = ['fallbackDependencies', 'fallbackDevDependencies']
+    while (listTypes.length) {
+      fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
+      fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
+      require(reCloneRepoWithCommitId)(listTypes.pop())
+      assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib')), './clones/repo1/lib does not exist')
+      assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2')), './clones/repo1/lib/fallback-deps-test-repo-2 does not exist')
+      assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2/.git')), './clones/repo1/lib/fallback-deps-test-repo-2/.git does not exist')
+    }
+  })
+
+  it('should reclone repo if -b branch is supplied', () => {
+    const listTypes = ['fallbackDependencies', 'fallbackDevDependencies']
+    while (listTypes.length) {
+      fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
+      fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
+      require(reCloneRepoWithBranch)(listTypes.pop())
+      assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib')), './clones/repo1/lib does not exist')
+      assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2')), './clones/repo1/lib/fallback-deps-test-repo-2 does not exist')
+      assert(fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2/.git')), './clones/repo1/lib/fallback-deps-test-repo-2/.git does not exist')
+    }
+  })
+
+  it('should reclone repo when attempting to clone specific -b version and url supplied differs from previously cloned repo', () => {
+    fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
+    fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
+    const output = require(reCloneRepo)('fallbackDependencies')
+    assert(output.includes('It will be re-cloned'), 'repo was not successfully re-cloned')
   })
 
   it('should pull from a non-tagged commit', () => {
@@ -173,13 +234,6 @@ describe('universal fallback-dependencies tests', () => {
     process.env.FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES = true
   })
 
-  it('should re-clone repo when attempting to clone specific -b version and url supplied differs from previously cloned repo', () => {
-    fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
-    fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
-    const output = require(reCloneRepo)('fallbackDependencies')
-    assert(output.includes('It will be re-cloned'), 'repo was not successfully re-cloned')
-  })
-
   it('should skip any folder that is not a git repo', () => {
     const listTypes = ['fallbackDependencies', 'fallbackDevDependencies']
     while (listTypes.length) {
@@ -206,7 +260,6 @@ describe('universal fallback-dependencies tests', () => {
       assert(!fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2/lib/fallback-deps-test-repo-3/package-lock.json')), './clones/repo1/lib/fallback-deps-test-repo-2/lib/fallback-deps-test-repo-3/package-lock.json does exist')
       assert(!fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2/lib/fallback-deps-test-repo-3/package.json')), './clones/repo1/lib/fallback-deps-test-repo-2/lib/fallback-deps-test-repo-3/package.json does exist')
     }
-    delete process.env.FALLBACK_DEPENDENCIES_PREFERRED_WILDCARD
   })
 
   it('should fail to clone fallbacks when supplied url\'s with specific -b versions', () => {
@@ -223,7 +276,14 @@ describe('universal fallback-dependencies tests', () => {
     assert(!fs.existsSync(path.join(__dirname, './clones/repo1/lib/fallback-deps-test-repo-2')), './clones/repo1/lib/fallback-deps-test-repo-2 does exist')
   })
 
-  it('should log that the branch is already up to date', () => {
+  it('should log that the repo is already up to date with the supplied -b commit id', () => {
+    fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
+    fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
+    const output = require(repoUpToDateWithCommitId)('fallbackDependencies')
+    assert(output.includes('Already up to date'), 'logs do not indicate that repo is up to date')
+  })
+
+  it('should log that repo is already up to date with the supplied -b branch', () => {
     fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
     fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
     const output = require(branchUpToDate)('fallbackDependencies')
@@ -279,16 +339,6 @@ describe('universal fallback-dependencies tests', () => {
     }, 7000)
   })
 
-  it('should throw an error if the "git pull" command fails', () => {
-    const listTypes = ['fallbackDependencies', 'fallbackDevDependencies']
-    while (listTypes.length) {
-      fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
-      fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
-      const output = require(createGitPullError)(listTypes.pop())
-      assert(output.includes('git pull error'), 'git pull was successful')
-    }
-  })
-
   it('should throw an error if the "git tag" command fails', () => {
     fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
     fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
@@ -310,6 +360,13 @@ describe('universal fallback-dependencies tests', () => {
     assert(output.includes('fatal: this operation must be run in a work tree'), 'git checkout command didn\'t throw an error')
   })
 
+  it('should throw an error if the "git fetch remote" command fails when attempting to search for head branch', () => {
+    fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
+    fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
+    const output = require(gitFetchHeadError)('fallbackDependencies')
+    assert(output.includes('fatal: couldn\'t find remote'), 'git fetch command didn\'t throw an error')
+  })
+
   it('should throw an error if the "git fetch remote" command fails', () => {
     fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
     fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
@@ -328,7 +385,7 @@ describe('universal fallback-dependencies tests', () => {
     fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
     fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
     const output = require(gitPullRemoteBranchError)('fallbackDependencies')
-    assert(output.includes('fatal: this operation must be run in a work tree'), 'git pull remote branch command didn\'t throw an error')
+    assert(output.includes('fatal: Need to specify how to reconcile divergent branches.'), 'git pull remote branch command didn\'t throw an error')
   })
 
   it('should throw an error if the "git checkout version" command fails after a fresh clone', () => {
@@ -337,13 +394,6 @@ describe('universal fallback-dependencies tests', () => {
     const output = require(gitCloneCheckoutError)('fallbackDependencies')
     assert(output.includes('did not match any file(s) known to git'), 'git checkout command didn\'t throw an error')
   })
-
-  // it('should throw an error if dependency fails to update', () => {
-  //   fs.rmSync(path.join(__dirname, './clones'), { recursive: true, force: true })
-  //   fs.rmSync(path.join(__dirname, './repos'), { recursive: true, force: true })
-  //   const output = require(failedToUpdate)('fallbackDependencies')
-  //   assert(output.includes('Cannot update lib/fallback-deps-test-repo-2'), 'lib/fallback-deps-test-repo-2 has been updated')
-  // })
 })
 
 describe('fallbackDevDependencies-exclusive tests', () => {

@@ -29,3 +29,7 @@ To include additional arguments to pass to the `npm ci` command, set the environ
 ## Remove stale directories from dependency target folder
 
 To remove stale directories from the dependency target folder, set the environment variable `FALLBACK_DEPENDENCIES_REMOVE_STALE_DIRECTORIES` to `true` or set `removeStaleDirectories` in `fallbackDependencies` package.json config.
+
+## Enable checkout instead of default recloning for dependency versions
+
+By default, whenever the user changes the `-b` version of the repository to clone from, fallback-dependencies will perform a reclone instead of allowing a checkout. This behavior is optimized for users who prioritize disk space. However, for those who value convenience, setting the environment variable `FALLBACK_DEPENDENCIES_ENABLE_CHECKOUT` to `true` or setting `enableCheckout` in `fallbackDependencies` package.json config enables the ability to check out branches, commit IDs, and tags without the need to reclone the repository, as long as the provided URL matches that of the target directory.

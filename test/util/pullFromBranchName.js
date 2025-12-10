@@ -23,7 +23,8 @@ module.exports = (listType) => {
       dir: 'lib',
       reposFile: 'reposFile.json',
       preferredWildcard: '../../../repos/repo2',
-      removeStaleDirectories: true
+      removeStaleDirectories: true,
+      enableCheckout: true
     }
     const repo1PackageLock = {
       name: 'repo1',

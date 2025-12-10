@@ -116,13 +116,8 @@ module.exports = (listType) => {
       })
     }
 
-    // add 1.0.0 and 1.0.1 tags and attempt to clone repo while specifying 1.0.0
+    // add 1.0.0 tag and attempt to clone repo while specifying it
     spawnSync('git', ['tag', '1.0.0'], {
-      shell: false,
-      stdio: 'pipe', // hide output from git
-      cwd: path.normalize(`${testSrc}/clones/repo2`, '') // where we're cloning the repo to
-    })
-    spawnSync('git', ['tag', '1.0.1'], {
       shell: false,
       stdio: 'pipe', // hide output from git
       cwd: path.normalize(`${testSrc}/clones/repo2`, '') // where we're cloning the repo to
@@ -152,10 +147,9 @@ module.exports = (listType) => {
     }).join('\n')
     fs.writeFileSync(path.normalize(`${testSrc}/clones/repo1/lib/fallback-deps-test-repo-2/.git/config`), updatedConfig)
 
-    // attempt to clone ../../../repos/repo2 -b 1.0.1
     repo1FileData = {
       'fallback-deps-test-repo-2': [
-        '../../../repos/repo2 -b 1.0.1'
+        '../../../repos/repo2'
       ]
     }
     fs.writeFileSync(`${testSrc}/clones/repo1/reposFile.json`, JSON.stringify(repo1FileData))
