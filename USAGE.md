@@ -30,6 +30,7 @@ Next, add a `fallbackDependencies` entry to your `package.json` alongside your `
 - `npmCiArgs` *[String or Array of Strings]*: Additional arguments to pass to `npm ci` command. Default: `undefined`.
 - `removeStaleDirectories` *[Boolean]*: Removes stale directories from dependency target folder. Default: `false`.
 - `enableCheckout` *[Boolean]*: Enables the ability to check out branches, commit IDs, and tags without the need to reclone the repository, as long as the provided URL matches that of the target directory. Default: `false`.
+  - Choose `true` to optimize for disk space. Choose `false` to optimize for minimizing network activity.
 
 Example of `reposFile` usage:
 
