@@ -20,6 +20,8 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
+    "npm-package-arg": "14.0.0",
+    "pacote": "22.0.0",
     "roosevelt-logger": "1.0.1"
   },
   "devDependencies": {
