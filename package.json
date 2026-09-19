@@ -8,36 +8,34 @@
       "url": "https://github.com/rooseveltframework/fallback-dependencies/graphs/contributors"
     }
   ],
-  "version": "1.1.4",
+  "version": "2.0.0",
   "files": [
     "fallback-dependencies.js",
-    "*.md"
+    "CHANGELOG.md",
+    "CONFIGURATION.md",
+    "README.md",
+    "USAGE.md"
   ],
   "homepage": "https://rooseveltframework.org/docs/fallback-dependencies/latest",
   "license": "CC-BY-4.0",
   "main": "fallback-dependencies.js",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.20.0"
   },
   "dependencies": {
     "npm-package-arg": "14.0.0",
     "pacote": "22.0.0",
-    "roosevelt-logger": "1.0.1"
+    "roosevelt-logger": "2.0.0"
   },
   "devDependencies": {
-    "c8": "11.0.0",
-    "mocha": "11.7.5",
     "standard": "17.1.2"
   },
-  "mocha": {
-    "timeout": "500000ms"
-  },
   "scripts": {
-    "coverage": "c8 --reporter=text --reporter=lcov mocha test/*.js --test",
+    "coverage": "node -e \"require('node:fs').mkdirSync('coverage', { recursive: true })\" && node --test --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=coverage/lcov.info \"test/**/*.test.js\"",
     "lint": "standard",
     "lint-fix": "standard --fix",
-    "test": "mocha test/*.js",
-    "test-debug": "mocha --inspect-brk test/*.js"
+    "test": "node --test \"test/**/*.test.js\"",
+    "test-debug": "node --inspect-brk --test \"test/**/*.test.js\""
   },
   "repository": {
     "type": "git",
