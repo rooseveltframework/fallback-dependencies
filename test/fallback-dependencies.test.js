@@ -5,6 +5,7 @@ const path = require('node:path')
 const {
   addCommit,
   createApp,
+  createBranch,
   createRepo,
   createSandbox,
   currentBranch,
@@ -14,6 +15,7 @@ const {
   installedVersion,
   isWindows,
   removeSandbox,
+  rewriteBranch,
   run
 } = require('./helpers')
 
@@ -136,7 +138,7 @@ test('updating dependencies that are already present', async t => {
   await t.test('reports that an unchanged dependency is already up to date', t => {
     const sandbox = sandboxed(t)
     const repo = versionedRepo(sandbox)
-    const app = createApp(sandbox, { dir: 'lib', enableCheckout: true, repos: { dep: repo.url } })
+    const app = createApp(sandbox, { dir: 'lib', repos: { dep: repo.url } })
 
     run(app)
     const result = run(app)
@@ -147,7 +149,7 @@ test('updating dependencies that are already present', async t => {
   await t.test('pulls new commits and stays on the branch', t => {
     const sandbox = sandboxed(t)
     const repo = versionedRepo(sandbox)
-    const app = createApp(sandbox, { dir: 'lib', enableCheckout: true, repos: { dep: repo.url } })
+    const app = createApp(sandbox, { dir: 'lib', repos: { dep: repo.url } })
     run(app)
 
     addCommit(repo, { 'package.json': { name: 'dep', version: '1.3.0' } })
@@ -162,7 +164,7 @@ test('updating dependencies that are already present', async t => {
   await t.test('switches from a tag to a branch without recloning', t => {
     const sandbox = sandboxed(t)
     const repo = versionedRepo(sandbox)
-    const app = createApp(sandbox, { dir: 'lib', enableCheckout: true, repos: { dep: `${repo.url}#v1.0.0` } })
+    const app = createApp(sandbox, { dir: 'lib', repos: { dep: `${repo.url}#v1.0.0` } })
     run(app)
     const dep = path.join(app, 'lib/dep')
     fs.writeFileSync(path.join(dep, 'marker.txt'), 'still the same clone')
@@ -181,7 +183,7 @@ test('updating dependencies that are already present', async t => {
   await t.test('detaches onto a tag without recloning', t => {
     const sandbox = sandboxed(t)
     const repo = versionedRepo(sandbox)
-    const app = createApp(sandbox, { dir: 'lib', enableCheckout: true, repos: { dep: repo.url } })
+    const app = createApp(sandbox, { dir: 'lib', repos: { dep: repo.url } })
     run(app)
     const dep = path.join(app, 'lib/dep')
     fs.writeFileSync(path.join(dep, 'marker.txt'), 'still the same clone')
@@ -197,24 +199,121 @@ test('updating dependencies that are already present', async t => {
     assert.ok(fs.existsSync(path.join(dep, 'marker.txt')), 'the clone should have been reused, not recloned')
   })
 
-  await t.test('reclones instead of checking out when enableCheckout is off', t => {
+  // running the script twice with nothing changed upstream must not touch the clone
+  for (const [label, spec] of [['no committish', ''], ['a branch', '#main'], ['a tag', '#v1.0.0'], ['a semver range', '#semver:^1.0.0']]) {
+    await t.test(`leaves an up to date clone alone when the spec names ${label}`, t => {
+      const sandbox = sandboxed(t)
+      const repo = versionedRepo(sandbox)
+      const app = createApp(sandbox, { dir: 'lib', repos: { dep: repo.url + spec } })
+      assert.equal(run(app).status, 0)
+      const dep = path.join(app, 'lib/dep')
+      const clonedAt = git(['rev-parse', 'HEAD'], dep)
+      fs.writeFileSync(path.join(dep, 'marker.txt'), 'must survive a second run')
+
+      const result = run(app)
+
+      assert.equal(result.status, 0, result.output)
+      assert.match(result.output, /Already up to date/)
+      assert.doesNotMatch(result.output, /Trying to clone/, 'an unchanged clone must not be re-cloned')
+      assert.ok(fs.existsSync(path.join(dep, 'marker.txt')), 'the clone was destroyed and re-cloned')
+      assert.equal(git(['rev-parse', 'HEAD'], dep), clonedAt)
+    })
+  }
+
+  await t.test('leaves an up to date clone alone on every subsequent run', t => {
     const sandbox = sandboxed(t)
     const repo = versionedRepo(sandbox)
     const app = createApp(sandbox, { dir: 'lib', repos: { dep: repo.url } })
     run(app)
-    fs.writeFileSync(path.join(app, 'lib/dep/marker.txt'), 'should not survive')
+    fs.writeFileSync(path.join(app, 'lib/dep/marker.txt'), 'must survive every run')
+
+    for (let i = 0; i < 3; i++) {
+      const result = run(app)
+      assert.doesNotMatch(result.output, /Trying to clone/, `run ${i + 2} re-cloned`)
+    }
+
+    assert.ok(fs.existsSync(path.join(app, 'lib/dep/marker.txt')))
+  })
+
+  await t.test('fast forwards a moved branch instead of recloning', t => {
+    const sandbox = sandboxed(t)
+    const repo = versionedRepo(sandbox)
+    const app = createApp(sandbox, { dir: 'lib', repos: { dep: repo.url } })
+    run(app)
+    const dep = path.join(app, 'lib/dep')
+    fs.writeFileSync(path.join(dep, 'marker.txt'), 'must survive an update')
+
+    addCommit(repo, { 'package.json': { name: 'dep', version: '1.4.0' } }) // move the branch so the resolved commit no longer matches
+    const result = run(app)
+
+    assert.equal(result.status, 0, result.output)
+    assert.doesNotMatch(result.output, /Trying to clone/, 'a moved branch should fast forward, not reclone')
+    assert.equal(installedVersion(dep), '1.4.0')
+    assert.equal(currentBranch(dep), 'main')
+    assert.ok(fs.existsSync(path.join(dep, 'marker.txt')), 'the clone should have been reused')
+  })
+
+  await t.test('refuses to reclone over a clone that has diverged', t => {
+    const sandbox = sandboxed(t)
+    const repo = versionedRepo(sandbox)
+    const app = createApp(sandbox, { dir: 'lib', repos: { dep: repo.url } })
+    run(app)
+    const dep = path.join(app, 'lib/dep')
+
+    git(['config', 'user.email', 'dev@example.com'], dep) // a developer commits inside the fallback dependency
+    git(['config', 'user.name', 'dev'], dep)
+    fs.writeFileSync(path.join(dep, 'FEATURE.txt'), 'unpushed local work')
+    git(['add', '-A'], dep)
+    git(['commit', '-q', '-m', 'local work'], dep)
+    addCommit(repo, { 'package.json': { name: 'dep', version: '1.4.0' } }) // and upstream moves too, so the two have diverged
 
     const result = run(app)
 
-    assert.match(result.output, /enableCheckout feature is disabled/)
-    assert.ok(!fs.existsSync(path.join(app, 'lib/dep/marker.txt')), 'the clone should have been replaced')
+    assert.equal(result.status, 1, 'a diverged clone should be reported as a failure')
+    assert.match(result.output, /has diverged/)
+    assert.ok(fs.existsSync(path.join(dep, 'FEATURE.txt')), 'local work must never be destroyed')
+  })
+
+  await t.test('leaves a clone alone when it has local commits ahead of the remote', t => {
+    const sandbox = sandboxed(t)
+    const repo = versionedRepo(sandbox)
+    const app = createApp(sandbox, { dir: 'lib', repos: { dep: repo.url } })
+    run(app)
+    const dep = path.join(app, 'lib/dep')
+
+    git(['config', 'user.email', 'dev@example.com'], dep)
+    git(['config', 'user.name', 'dev'], dep)
+    fs.writeFileSync(path.join(dep, 'FEATURE.txt'), 'unpushed local work')
+    git(['add', '-A'], dep)
+    git(['commit', '-q', '-m', 'local work'], dep)
+
+    const result = run(app)
+
+    assert.equal(result.status, 0, result.output)
+    assert.match(result.output, /local commits that are ahead of main/)
+    assert.ok(fs.existsSync(path.join(dep, 'FEATURE.txt')), 'local work must be preserved')
+  })
+
+  await t.test('reclones when the resolved commit is no longer reachable upstream', t => {
+    const sandbox = sandboxed(t)
+    const repo = versionedRepo(sandbox)
+    const app = createApp(sandbox, { dir: 'lib', repos: { dep: `${repo.url}#side` } })
+    createBranch(repo, 'side', { 'package.json': { name: 'dep', version: '5.0.0' } })
+    run(app)
+    assert.equal(installedVersion(path.join(app, 'lib/dep')), '5.0.0')
+
+    rewriteBranch(repo, 'side', { 'package.json': { name: 'dep', version: '6.0.0' } }) // force push rewrites the branch, orphaning what was cloned
+    const result = run(app)
+
+    assert.equal(result.status, 0, result.output)
+    assert.equal(installedVersion(path.join(app, 'lib/dep')), '6.0.0')
   })
 
   await t.test('reclones when a different url is supplied', t => {
     const sandbox = sandboxed(t)
     const first = versionedRepo(sandbox, 'first')
     const second = createRepo(sandbox, 'second', [{ files: { 'package.json': { name: 'dep', version: '9.0.0' } } }])
-    const app = createApp(sandbox, { dir: 'lib', enableCheckout: true, repos: { dep: first.url } })
+    const app = createApp(sandbox, { dir: 'lib', repos: { dep: first.url } })
     run(app)
 
     const pkg = JSON.parse(fs.readFileSync(path.join(app, 'package.json'), 'utf8'))
@@ -490,7 +589,7 @@ test('installing the dependencies of a dependency', async t => {
   await t.test('reruns npm ci on an unchanged dependency when asked', t => {
     const sandbox = sandboxed(t)
     const repo = repoWithLockfile(sandbox)
-    const app = createApp(sandbox, { dir: 'lib', enableCheckout: true, rerunNpmCi: true, repos: { dep: repo.url } })
+    const app = createApp(sandbox, { dir: 'lib', rerunNpmCi: true, repos: { dep: repo.url } })
     run(app)
 
     const result = run(app)

@@ -94,6 +94,34 @@ function addCommit (repo, files, { branch = 'main', tag, message = 'another comm
   return git(['rev-parse', 'HEAD'], repo.work)
 }
 
+// write the given files onto a branch of a repo's working clone and publish it
+function writeBranch (repo, branch, files, { force = false, message = 'commit' } = {}) {
+  for (const [file, contents] of Object.entries(files)) {
+    fs.writeFileSync(path.join(repo.work, file), typeof contents === 'string' ? contents : JSON.stringify(contents, null, 2))
+  }
+  git(['add', '-A'], repo.work)
+  git(['commit', '-q', '-m', message], repo.work)
+  const push = ['push', '-q']
+  if (force) push.push('--force')
+  git([...push, repo.bare, branch], repo.work)
+  const head = git(['rev-parse', 'HEAD'], repo.work)
+  git(['checkout', '-q', 'main'], repo.work)
+  return head
+}
+
+// start a new branch on the remote
+function createBranch (repo, branch, files) {
+  git(['checkout', '-q', '-b', branch], repo.work)
+  return writeBranch(repo, branch, files, { message: `start ${branch}` })
+}
+
+// replace a branch's history and force push it, orphaning whatever was cloned from it before
+function rewriteBranch (repo, branch, files) {
+  git(['checkout', '-q', branch], repo.work)
+  git(['reset', '-q', '--hard', 'main'], repo.work)
+  return writeBranch(repo, branch, files, { force: true, message: `rewritten ${branch}` })
+}
+
 // build the app that declares fallback dependencies, with this module linked in the way npm links a file: dependency
 function createApp (sandbox, config, { listType = 'fallbackDependencies', reposFile, name = 'app' } = {}) {
   const appDir = path.join(sandbox, name)
@@ -155,6 +183,7 @@ function currentBranch (dir) {
 module.exports = {
   addCommit,
   createApp,
+  createBranch,
   createRepo,
   createSandbox,
   currentBranch,
@@ -166,6 +195,7 @@ module.exports = {
   moduleRoot,
   pushRepo,
   removeSandbox,
+  rewriteBranch,
   run,
   stripAnsi
 }
