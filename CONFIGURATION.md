@@ -23,6 +23,10 @@ The following spec forms are supported:
 
 The transport you write is the transport that gets used, so an `ssh://` url will authenticate with your SSH key and an `https://` url will authenticate over HTTPS.
 
+## npm configuration
+
+Registry settings are read the same way npm reads them, from the global, user, and project `.npmrc` files, with anything npm exports to the install taking precedence. That covers `registry`, scoped registries such as `@scope:registry`, auth tokens, proxy settings, TLS options, and the shared npm cache, so a fallback-dependency fetched from a private registry authenticates exactly as `npm install` would. `${VAR}` references in `.npmrc` values are expanded.
+
 ## Fetch devDependencies of your fallback-dependencies
 
 By default, `fallback-dependencies` will not install the `devDependencies` of a given repo that is cloned. If you want to do so for any repo, put it in a `fallbackDevDependencies` block instead of a `fallbackDependencies` block in your `package.json`.
@@ -38,6 +42,14 @@ To prevent a fallback-dependency from being installed in a situation where the r
 ## Let users prioritize URL list differently
 
 To move a preferred domain up to the top of the list of fallback-dependencies to try regardless of the order specified in the app's config, set the environment variable `FALLBACK_DEPENDENCIES_PREFERRED_WILDCARD` to a string to match in the spec list.
+
+## Building a fallback-dependency
+
+When npm installs a dependency from git, it runs that package's `prepare` script so packages that ship from source get built. Fallback-dependencies does the same: after fetching a git fallback-dependency that has a `prepare` script, it installs that repo's dependencies and runs the build, keeping `devDependencies` because that is where the build toolchain lives.
+
+To skip this, set the environment variable `FALLBACK_DEPENDENCIES_SKIP_PREPARE` to `true` or set `skipPrepare` in your `fallbackDependencies` package.json config. Adding ` -skip-deps` to a spec also skips it, along with everything else that spec would install.
+
+Packages fetched from the npm registry are not built, because published packages are already built. This matches npm.
 
 ## Run `npm ci` on already cloned repos
 

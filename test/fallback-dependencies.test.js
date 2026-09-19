@@ -14,6 +14,7 @@ const {
   gitUrl,
   installedVersion,
   isWindows,
+  mirrorRepo,
   removeSandbox,
   rewriteBranch,
   run
@@ -253,6 +254,38 @@ test('updating dependencies that are already present', async t => {
     assert.ok(fs.existsSync(path.join(dep, 'marker.txt')), 'the clone should have been reused')
   })
 
+  await t.test('reclones a clone whose git remote has been removed', t => {
+    const sandbox = sandboxed(t)
+    const repo = versionedRepo(sandbox)
+    const app = createApp(sandbox, { dir: 'lib', repos: { dep: `${repo.url}#main` } })
+    run(app)
+    const dep = path.join(app, 'lib/dep')
+    git(['remote', 'remove', 'origin'], dep)
+    fs.writeFileSync(path.join(dep, 'marker.txt'), 'should not survive')
+
+    const result = run(app)
+
+    assert.equal(result.status, 0, result.output)
+    assert.match(result.output, /has no git remote/)
+    assert.ok(!fs.existsSync(path.join(dep, 'marker.txt')), 'a clone with no remote should be replaced')
+  })
+
+  await t.test('reports a commit id that exists nowhere rather than claiming success', t => {
+    const sandbox = sandboxed(t)
+    const repo = versionedRepo(sandbox)
+    const app = createApp(sandbox, { dir: 'lib', repos: { dep: `${repo.url}#main` } })
+    run(app)
+
+    const pkg = JSON.parse(fs.readFileSync(path.join(app, 'package.json'), 'utf8'))
+    pkg.fallbackDependencies.repos.dep = `${repo.url}#0000000000000000000000000000000000000001`
+    fs.writeFileSync(path.join(app, 'package.json'), JSON.stringify(pkg, null, 2))
+    const result = run(app)
+
+    assert.equal(result.status, 1)
+    assert.match(result.output, /Cannot reach 0000000000000000000000000000000000000001/)
+    assert.match(result.output, /failed to clone/)
+  })
+
   await t.test('refuses to reclone over a clone that has diverged', t => {
     const sandbox = sandboxed(t)
     const repo = versionedRepo(sandbox)
@@ -292,6 +325,98 @@ test('updating dependencies that are already present', async t => {
     assert.equal(result.status, 0, result.output)
     assert.match(result.output, /local commits that are ahead of main/)
     assert.ok(fs.existsSync(path.join(dep, 'FEATURE.txt')), 'local work must be preserved')
+  })
+
+  await t.test('checks out the branch when the committish is dropped from the spec', t => {
+    const sandbox = sandboxed(t)
+    const repo = createRepo(sandbox, 'dep', [{ files: { 'package.json': { name: 'dep', version: '1.0.0' } }, tag: 'v1.0.0' }])
+    const app = createApp(sandbox, { dir: 'lib', repos: { dep: `${repo.url}#v1.0.0` } })
+    run(app)
+    const dep = path.join(app, 'lib/dep')
+    assert.equal(currentBranch(dep), null, 'a tag should start out detached')
+    fs.writeFileSync(path.join(dep, 'marker.txt'), 'must survive')
+
+    const pkg = JSON.parse(fs.readFileSync(path.join(app, 'package.json'), 'utf8'))
+    pkg.fallbackDependencies.repos.dep = repo.url // the tag pointed at the branch tip, so the commit does not change
+    fs.writeFileSync(path.join(app, 'package.json'), JSON.stringify(pkg, null, 2))
+    const result = run(app)
+
+    assert.equal(result.status, 0, result.output)
+    assert.equal(currentBranch(dep), 'main', 'dropping the committish should move the clone onto the default branch')
+    assert.doesNotMatch(result.output, /Trying to clone/, 'it should check out, not reclone')
+    assert.ok(fs.existsSync(path.join(dep, 'marker.txt')), 'the clone should have been reused')
+  })
+
+  await t.test('is a no-op once the committish has been dropped and the branch checked out', t => {
+    const sandbox = sandboxed(t)
+    const repo = createRepo(sandbox, 'dep', [{ files: { 'package.json': { name: 'dep', version: '1.0.0' } }, tag: 'v1.0.0' }])
+    const app = createApp(sandbox, { dir: 'lib', repos: { dep: repo.url } })
+    run(app)
+
+    const result = run(app)
+
+    assert.match(result.output, /Already up to date/)
+    assert.equal(currentBranch(path.join(app, 'lib/dep')), 'main')
+  })
+
+  await t.test('reuses the clone when the url changes to a mirror at the same commit', t => {
+    const sandbox = sandboxed(t)
+    const repo = versionedRepo(sandbox)
+    const mirror = mirrorRepo(sandbox, repo, 'mirror')
+    const app = createApp(sandbox, { dir: 'lib', repos: { dep: `${repo.url}#main` } })
+    run(app)
+    const dep = path.join(app, 'lib/dep')
+    fs.writeFileSync(path.join(dep, 'marker.txt'), 'must survive a url change')
+
+    const pkg = JSON.parse(fs.readFileSync(path.join(app, 'package.json'), 'utf8'))
+    pkg.fallbackDependencies.repos.dep = `${mirror.url}#main`
+    fs.writeFileSync(path.join(app, 'package.json'), JSON.stringify(pkg, null, 2))
+    const result = run(app)
+
+    assert.equal(result.status, 0, result.output)
+    assert.doesNotMatch(result.output, /Trying to clone/, 'a mirror at the same commit should not trigger a reclone')
+    assert.ok(fs.existsSync(path.join(dep, 'marker.txt')), 'the clone should have been reused')
+    assert.match(git(['remote', 'get-url', 'origin'], dep), /mirror\.git$/, 'the remote should have been repointed')
+  })
+
+  await t.test('fast forwards when the url changes to a mirror that is ahead', t => {
+    const sandbox = sandboxed(t)
+    const repo = versionedRepo(sandbox)
+    const app = createApp(sandbox, { dir: 'lib', repos: { dep: `${repo.url}#main` } })
+    run(app)
+    const dep = path.join(app, 'lib/dep')
+    fs.writeFileSync(path.join(dep, 'marker.txt'), 'must survive a url change')
+
+    addCommit(repo, { 'package.json': { name: 'dep', version: '1.5.0' } })
+    const mirror = mirrorRepo(sandbox, repo, 'mirror') // mirrored after the new commit, so it is ahead of what was cloned
+    const pkg = JSON.parse(fs.readFileSync(path.join(app, 'package.json'), 'utf8'))
+    pkg.fallbackDependencies.repos.dep = `${mirror.url}#main`
+    fs.writeFileSync(path.join(app, 'package.json'), JSON.stringify(pkg, null, 2))
+    const result = run(app)
+
+    assert.equal(result.status, 0, result.output)
+    assert.doesNotMatch(result.output, /Trying to clone/, 'a mirror sharing history should fast forward, not reclone')
+    assert.equal(installedVersion(dep), '1.5.0')
+    assert.ok(fs.existsSync(path.join(dep, 'marker.txt')), 'the clone should have been reused')
+  })
+
+  await t.test('reclones when the url changes to a repo with unrelated history', t => {
+    const sandbox = sandboxed(t)
+    const repo = versionedRepo(sandbox)
+    const unrelated = createRepo(sandbox, 'unrelated', [{ files: { 'package.json': { name: 'dep', version: '9.9.9' } } }])
+    const app = createApp(sandbox, { dir: 'lib', repos: { dep: `${repo.url}#main` } })
+    run(app)
+    fs.writeFileSync(path.join(app, 'lib/dep/marker.txt'), 'should not survive')
+
+    const pkg = JSON.parse(fs.readFileSync(path.join(app, 'package.json'), 'utf8'))
+    pkg.fallbackDependencies.repos.dep = `${unrelated.url}#main`
+    fs.writeFileSync(path.join(app, 'package.json'), JSON.stringify(pkg, null, 2))
+    const result = run(app)
+
+    assert.equal(result.status, 0, result.output)
+    assert.match(result.output, /no longer shares history/)
+    assert.ok(!fs.existsSync(path.join(app, 'lib/dep/marker.txt')), 'an unrelated repo must replace the clone')
+    assert.equal(installedVersion(path.join(app, 'lib/dep')), '9.9.9')
   })
 
   await t.test('reclones when the resolved commit is no longer reachable upstream', t => {
@@ -689,5 +814,101 @@ test('the git sanity check', async t => {
 
     assert.equal(result.status, 1)
     assert.match(result.output, /Process killed due to timeout/)
+  })
+})
+
+test('npm configuration', async t => {
+  // a scoped registry is a good probe: npm never exports scoped registry config to lifecycle scripts, so honoring it proves the .npmrc itself was read
+  const unreachable = 'http://127.0.0.1:1/'
+
+  await t.test('honors a scoped registry from a project .npmrc', t => {
+    const sandbox = sandboxed(t)
+    const app = createApp(sandbox, { dir: 'lib', repos: { thing: '@fdtest/thing@1.0.0' } })
+    fs.writeFileSync(path.join(app, '.npmrc'), `@fdtest:registry=${unreachable}\nfetch-retries=0\n`)
+
+    const result = run(app)
+
+    assert.equal(result.status, 1)
+    assert.match(result.output, /127\.0\.0\.1:1/, 'the scoped registry from .npmrc should have been used')
+  })
+
+  await t.test('expands environment variables in .npmrc values', t => {
+    const sandbox = sandboxed(t)
+    const app = createApp(sandbox, { dir: 'lib', repos: { thing: '@fdtest/thing@1.0.0' } })
+    const reference = '$' + '{FD_TEST_REGISTRY}' // split so the linter does not read it as a template literal
+    fs.writeFileSync(path.join(app, '.npmrc'), `@fdtest:registry=${reference}\nfetch-retries=0\n`)
+
+    const result = run(app, { FD_TEST_REGISTRY: unreachable })
+
+    assert.equal(result.status, 1)
+    assert.match(result.output, /127\.0\.0\.1:1/, 'the environment variable reference should have been expanded')
+  })
+})
+
+test('building git dependencies', async t => {
+  // npm runs a git dependency's prepare script on install, which is how packages that ship from source get built
+  function buildableRepo (sandbox) {
+    return createRepo(sandbox, 'needsbuild', [{
+      files: {
+        'package.json': {
+          name: 'needsbuild',
+          version: '1.0.0',
+          scripts: { prepare: 'node -e "require(\'fs\').writeFileSync(\'BUILT.txt\', \'built\')"' }
+        }
+      }
+    }])
+  }
+
+  await t.test('runs the prepare script the way npm does', t => {
+    const sandbox = sandboxed(t)
+    const repo = buildableRepo(sandbox)
+    const app = createApp(sandbox, { dir: 'lib', repos: { needsbuild: `${repo.url}#main` } })
+
+    const result = run(app)
+
+    assert.equal(result.status, 0, result.output)
+    assert.ok(fs.existsSync(path.join(app, 'lib/needsbuild/BUILT.txt')), 'the prepare script should have been run')
+  })
+
+  await t.test('skips the build when skipPrepare is set', t => {
+    const sandbox = sandboxed(t)
+    const repo = buildableRepo(sandbox)
+    const app = createApp(sandbox, { dir: 'lib', skipPrepare: true, repos: { needsbuild: `${repo.url}#main` } })
+
+    const result = run(app)
+
+    assert.equal(result.status, 0, result.output)
+    assert.ok(!fs.existsSync(path.join(app, 'lib/needsbuild/BUILT.txt')), 'skipPrepare should have prevented the build')
+  })
+
+  await t.test('skips the build when the environment variable is set', t => {
+    const sandbox = sandboxed(t)
+    const repo = buildableRepo(sandbox)
+    const app = createApp(sandbox, { dir: 'lib', repos: { needsbuild: `${repo.url}#main` } })
+
+    run(app, { FALLBACK_DEPENDENCIES_SKIP_PREPARE: 'true' })
+
+    assert.ok(!fs.existsSync(path.join(app, 'lib/needsbuild/BUILT.txt')), 'the environment variable should have prevented the build')
+  })
+
+  await t.test('skips the build when the spec opts out of dependencies', t => {
+    const sandbox = sandboxed(t)
+    const repo = buildableRepo(sandbox)
+    const app = createApp(sandbox, { dir: 'lib', repos: { needsbuild: `${repo.url}#main -skip-deps` } })
+
+    run(app)
+
+    assert.ok(!fs.existsSync(path.join(app, 'lib/needsbuild/BUILT.txt')), '-skip-deps should have prevented the build')
+  })
+
+  await t.test('does not build a dependency that has no prepare script', t => {
+    const sandbox = sandboxed(t)
+    const repo = versionedRepo(sandbox)
+    const app = createApp(sandbox, { dir: 'lib', repos: { dep: `${repo.url}#main` } })
+
+    const result = run(app)
+
+    assert.equal(result.status, 0, result.output)
+    assert.doesNotMatch(result.output, /prepare script/)
   })
 })

@@ -1,3 +1,10 @@
+## 2.0.2
+
+- Altered git fallback-dependencies with a `prepare` script to now build the way npm builds them, with their `devDependencies` installed. Set `skipPrepare`, or the `FALLBACK_DEPENDENCIES_SKIP_PREPARE` environment variable, to opt out.
+- Fixed npm configuration being ignored when fetching from the npm registry. The global, user, and project `.npmrc` files are now read the same way npm reads them, so `registry`, scoped registries, auth tokens, proxy settings, TLS options, and the npm cache all apply. Previously a fallback-dependency on a private registry was requested from the public one.
+- Fixed a fallback-dependency staying detached when its committish was removed from the spec. Being on the right commit is no longer treated as up to date on its own; a spec that names a branch now also requires the clone to be checked out on that branch.
+- Fixed a fallback-dependency being re-cloned whenever a different url in its list was used, even when that url was a mirror holding the same history. The remote is now repointed and the clone updated in place, and it is only rebuilt when the new location shares no history with it.
+
 ## 2.0.1
 
 - Breaking: removed the `enableCheckout` option and the `FALLBACK_DEPENDENCIES_ENABLE_CHECKOUT` environment variable. Existing clones are now always updated in place when that is possible, so the option had no remaining purpose beyond forcing needless re-clones.
