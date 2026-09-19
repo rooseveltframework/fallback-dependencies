@@ -1,3 +1,12 @@
+## 2.0.1
+
+- Breaking: removed the `enableCheckout` option and the `FALLBACK_DEPENDENCIES_ENABLE_CHECKOUT` environment variable. Existing clones are now always updated in place when that is possible, so the option had no remaining purpose beyond forcing needless re-clones.
+- Fixed a regression in 2.0.0 that caused every fallback-dependency to be deleted and re-cloned on every run, because the already-up-to-date check was only reached when `enableCheckout` was on, and it was off by default. A clone sitting on the commit its spec resolves to is now left alone.
+  - Accordingly as well:
+    - A branch that has moved ahead is now fast forwarded instead of re-cloned.
+    - A clone with local commits ahead of its remote is now left alone instead of being rebuilt.
+    - A clone that has diverged from its remote is now reported as a failure and left untouched, rather than having local commits discarded.
+
 ## 2.0.0
 
 - Breaking: dependencies are now declared using [npm package specs](https://docs.npmjs.com/cli/v11/using-npm/package-spec) instead of the `<url> -b <version>` syntax. You will need to migrate to the new syntax; dependencies declared using the old syntax are rejected with an error explaining how to update them.

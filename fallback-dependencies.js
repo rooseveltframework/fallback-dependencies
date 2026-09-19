@@ -21,6 +21,12 @@ function git (args, cwd) {
   return result.stdout.toString().trim()
 }
 
+// trimmed stdout of a git command, or null when it fails, for lookups where failure is an answer rather than an error
+function gitOrNull (args, cwd) {
+  const result = spawnSync('git', args, { shell: false, cwd })
+  return result.status === 0 ? result.stdout.toString().trim() : null
+}
+
 // sanity check that git actually works
 function assertGitWorks () {
   return new Promise((resolve, reject) => {
@@ -73,8 +79,51 @@ function defaultBranch (dir) {
   return git(['rev-parse', '--abbrev-ref', `${remote}/HEAD`], dir).replace(remote + '/', '')
 }
 
+// bring an existing clone to the commit the spec resolves to, returning false when nothing needed doing or 'reclone' when the clone cannot get there
+//
+// throws rather than recloning when the clone holds commits that starting over would destroy, because these directories are live working copies people commit in
+function updateGitClone (targetDir, url, commit, requestedRef, requestedRange) {
+  if (git(['rev-parse', 'HEAD'], targetDir) === commit) { // pacote resolved the spec to the commit that is already checked out, so there is nothing to do
+    logger.log('Already up to date: ' + targetDir + ' from ' + url + ' is already up to date.')
+    return false
+  }
+
+  const isBranch = refIsBranch(url, requestedRef, requestedRange)
+  const remote = git(['remote'], targetDir).split('\n')[0].trim()
+  const branch = isBranch ? (requestedRef || defaultBranch(targetDir)) : null
+  // what this clone last saw the remote branch pointing at, read before fetching so that local commits can later be told apart from a remote that rewrote its history
+  const lastSynced = isBranch ? gitOrNull(['rev-parse', `${remote}/${branch}`], targetDir) : null
+
+  git(['fetch', '--all', '--tags'], targetDir)
+  if (gitOrNull(['cat-file', '-e', `${commit}^{commit}`], targetDir) === null) return 'reclone' // the commit the spec resolves to cannot be obtained at all
+
+  if (!isBranch) { // a tag, commit id or semver range can only be checked out detached
+    git(['checkout', '--detach', commit], targetDir)
+    logger.log(`Successfully checked out ${requestedRef || commit}.`)
+    return true
+  }
+
+  git(['checkout', branch], targetDir) // a branch stays checked out so the working tree remains usable
+  const head = git(['rev-parse', 'HEAD'], targetDir)
+  if (head === commit) {
+    logger.log('Already up to date: ' + targetDir + ' from ' + url + ' is already up to date.')
+    return false
+  }
+  if (gitOrNull(['merge-base', '--is-ancestor', head, commit], targetDir) !== null) { // the branch simply moved ahead, so fast forward onto what was just fetched
+    git(['merge', '--ff-only', commit], targetDir)
+    logger.log(`Successfully updated branch ${branch}.`)
+    return true
+  }
+  if (gitOrNull(['merge-base', '--is-ancestor', commit, head], targetDir) !== null) { // local commits sit on top of the remote, so there is nothing to pull
+    logger.log('Leaving ' + targetDir + ' alone because it has local commits that are ahead of ' + branch + '.')
+    return false
+  }
+  if (head === lastSynced) return 'reclone' // the clone never moved, so the remote rewrote its history and there is no local work to lose
+  throw new Error(`${targetDir} has diverged from ${branch} on ${url}. Reconcile or remove it by hand; refusing to re-clone over local commits.`)
+}
+
 // fetch a git spec into targetDir, returning false if the existing clone was already up to date
-function fetchGitDependency (spec, parsed, targetDir, parentDir, dependency, enableCheckout) {
+function fetchGitDependency (spec, parsed, targetDir, parentDir, dependency) {
   const resolved = npa(spec.resolved)
   const url = resolved.fetchSpec // git-usable url, whether or not the host is one npm has a shorthand for
   const commit = resolved.gitCommittish // the specific commit the spec resolved to
@@ -91,26 +140,12 @@ function fetchGitDependency (spec, parsed, targetDir, parentDir, dependency, ena
       logger.log('Removing ' + targetDir + ' from ' + url + ' because a different git url was supplied. It will be re-cloned.')
       fs.rmSync(path.resolve(targetDir), { recursive: true, force: true })
       reClone = true
-    } else if (!enableCheckout) {
-      logger.log('Removing ' + targetDir + ' from ' + url + ' because the enableCheckout feature is disabled. It will be re-cloned.')
+    } else {
+      const updated = updateGitClone(targetDir, url, commit, requestedRef, requestedRange)
+      if (updated !== 'reclone') return updated
+      logger.log('Removing ' + targetDir + ' because ' + commit + ' is no longer reachable from ' + url + '. It will be re-cloned.')
       fs.rmSync(path.resolve(targetDir), { recursive: true, force: true })
       reClone = true
-    } else {
-      if (git(['rev-parse', 'HEAD'], targetDir) === commit) { // already sitting on the commit the spec resolves to
-        logger.log('Already up to date: ' + targetDir + ' from ' + url + ' is already up to date.')
-        return false
-      }
-      git(['fetch', '--all', '--tags'], targetDir)
-      if (refIsBranch(url, requestedRef, requestedRange)) { // stay on the branch so the working tree remains usable
-        const branch = requestedRef || defaultBranch(targetDir)
-        git(['checkout', branch], targetDir)
-        git(['pull', git(['remote'], targetDir).split('\n')[0].trim(), branch], targetDir)
-        logger.log(`Successfully updated branch ${branch}.`)
-      } else { // a tag or commit id can only be checked out detached
-        git(['checkout', '--detach', commit], targetDir)
-        logger.log(`Successfully checked out ${requestedRef || commit}.`)
-      }
-      return true
     }
   }
 
@@ -244,7 +279,6 @@ async function processList (listType) {
     for (const [i, fallback] of fallbacks.entries()) {
       let spec = fallback
       const rerunNpmCi = process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI || pkg[listType].rerunNpmCi
-      const enableCheckout = process.env.FALLBACK_DEPENDENCIES_ENABLE_CHECKOUT || pkg[listType].enableCheckout
       let skipDeps = false
       if (spec.slice(-11) === ' -skip-deps') {
         spec = spec.slice(0, -11)
@@ -255,7 +289,7 @@ async function processList (listType) {
         let updated
         if (parsed.type === 'git') {
           const resolved = await pacote.resolve(spec) // ask pacote to turn the spec into a url and an exact commit
-          updated = fetchGitDependency({ raw: spec, resolved }, parsed, targetDir, fallbackDependenciesDir, dependency, enableCheckout)
+          updated = fetchGitDependency({ raw: spec, resolved }, parsed, targetDir, fallbackDependenciesDir, dependency)
           if (updated === 'skip') break // move on to next dep
         } else updated = await fetchRegistryDependency({ raw: spec }, targetDir)
         if (!updated && !rerunNpmCi) break // stop checking fallbacks
