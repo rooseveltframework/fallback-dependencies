@@ -122,6 +122,13 @@ function rewriteBranch (repo, branch, files) {
   return writeBranch(repo, branch, files, { force: true, message: `rewritten ${branch}` })
 }
 
+// a second remote carrying the same history, the way a fallback list points at mirrors of one repo
+function mirrorRepo (sandbox, repo, name) {
+  const bare = path.join(sandbox, 'remotes', `${name}.git`)
+  git(['clone', '-q', '--bare', repo.work, bare], sandbox)
+  return { name, work: repo.work, bare, url: gitUrl(bare) }
+}
+
 // build the app that declares fallback dependencies, with this module linked in the way npm links a file: dependency
 function createApp (sandbox, config, { listType = 'fallbackDependencies', reposFile, name = 'app' } = {}) {
   const appDir = path.join(sandbox, name)
@@ -192,6 +199,7 @@ module.exports = {
   gitUrl,
   installedVersion,
   isWindows,
+  mirrorRepo,
   moduleRoot,
   pushRepo,
   removeSandbox,

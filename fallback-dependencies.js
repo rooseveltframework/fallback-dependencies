@@ -1,4 +1,5 @@
 const fs = require('fs')
+const os = require('os')
 const path = require('path')
 const Logger = require('roosevelt-logger')
 const logger = new Logger()
@@ -8,6 +9,57 @@ const npa = require('npm-package-arg')
 let pkgPath = process.argv[1] // full path of postinstall script being executed, presumably buried in node_modules in your app
 pkgPath = pkgPath.split('node_modules')[0] // take only the part preceding node_modules
 const pkg = require(pkgPath + 'package.json') // require the package.json in that folder
+
+// read one .npmrc, expanding the ${VAR} references npm supports in its values
+function readNpmrc (file) {
+  const config = {}
+  let contents
+  try {
+    contents = fs.readFileSync(file, 'utf8')
+  } catch {
+    return config // a missing .npmrc simply contributes nothing
+  }
+  for (const line of contents.split('\n')) {
+    const trimmed = line.trim()
+    if (trimmed === '' || trimmed.startsWith(';') || trimmed.startsWith('#') || trimmed.startsWith('[')) continue
+    const separator = trimmed.indexOf('=')
+    if (separator === -1) continue
+    const key = trimmed.slice(0, separator).trim()
+    let value = trimmed.slice(separator + 1).trim()
+    if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1)
+    config[key] = value.replace(/\$\{([^}]+)\}/g, (match, name) => process.env[name] ?? match)
+  }
+  return config
+}
+
+// npm's own configuration, so that registry, scoped registries, auth tokens, proxies and the shared cache all behave here exactly as they do for npm itself
+//
+// the .npmrc files are read directly because npm exports only some of its resolved config to lifecycle scripts, deliberately withholding auth tokens; whatever it does export wins, since that is what npm resolved for this run
+function npmConfig () {
+  const config = {}
+  // the project .npmrc is the one belonging to the app being installed into, which is pkgPath; npm_config_local_prefix would point at whatever project invoked npm, which is not the same thing when this runs as a nested install
+  const files = [
+    process.env.npm_config_globalconfig,
+    process.env.npm_config_userconfig || path.join(os.homedir(), '.npmrc'),
+    path.join(pkgPath, '.npmrc')
+  ]
+  for (const file of files) {
+    if (file) Object.assign(config, readNpmrc(file))
+  }
+  for (const [key, value] of Object.entries(process.env)) {
+    if (!key.startsWith('npm_config_') || value === '') continue
+    config[key.slice('npm_config_'.length).replace(/_/g, '-')] = value
+  }
+  // a few options reach npm-registry-fetch under a different name than .npmrc spells them
+  const aliases = { 'strict-ssl': 'strictSSL', 'https-proxy': 'httpsProxy', noproxy: 'noProxy', 'fetch-retries': 'fetchRetries', maxsockets: 'maxSockets' }
+  for (const [from, to] of Object.entries(aliases)) {
+    if (config[from] !== undefined) config[to] = config[from]
+  }
+  if (config.strictSSL !== undefined) config.strictSSL = config.strictSSL !== 'false' && config.strictSSL !== false
+  return config
+}
+
+const npmOpts = npmConfig()
 
 const registryTypes = new Set(['version', 'range', 'tag', 'alias', 'remote']) // npm spec types that resolve to a tarball rather than a git repo
 
@@ -79,46 +131,66 @@ function defaultBranch (dir) {
   return git(['rev-parse', '--abbrev-ref', `${remote}/HEAD`], dir).replace(remote + '/', '')
 }
 
+// the branch the spec expects the clone to be sitting on, or null when the spec pins a commit that has to be checked out detached
+//
+// answered from the clone's own remote-tracking refs so that a run with nothing to do costs no network; a branch created upstream since the last fetch reads as a tag here, which only leaves the clone detached on the right commit until something else changes
+function expectedBranch (targetDir, remote, requestedRef, requestedRange) {
+  if (requestedRange) return null // a semver range resolves to a tag
+  if (!requestedRef) return defaultBranch(targetDir) // no committish means the remote's default branch
+  if (/^[0-9a-f]{40}$/i.test(requestedRef)) return null // a full commit id can never be a branch name
+  return gitOrNull(['show-ref', '--verify', `refs/remotes/${remote}/${requestedRef}`], targetDir) === null ? null : requestedRef
+}
+
 // bring an existing clone to the commit the spec resolves to, returning false when nothing needed doing or 'reclone' when the clone cannot get there
 //
 // throws rather than recloning when the clone holds commits that starting over would destroy, because these directories are live working copies people commit in
 function updateGitClone (targetDir, url, commit, requestedRef, requestedRange) {
-  if (git(['rev-parse', 'HEAD'], targetDir) === commit) { // pacote resolved the spec to the commit that is already checked out, so there is nothing to do
+  const remote = git(['remote'], targetDir).split('\n')[0].trim()
+  const head = git(['rev-parse', 'HEAD'], targetDir)
+  const onBranch = gitOrNull(['branch', '--show-current'], targetDir) || null // null when the clone is detached
+  const wantBranch = expectedBranch(targetDir, remote, requestedRef, requestedRange)
+
+  // being on the right commit is not enough: a clone left detached by an earlier tag or commit spec still has to be moved onto the branch once the spec asks for one
+  if (head === commit && onBranch === wantBranch) {
     logger.log('Already up to date: ' + targetDir + ' from ' + url + ' is already up to date.')
     return false
   }
 
-  const isBranch = refIsBranch(url, requestedRef, requestedRange)
-  const remote = git(['remote'], targetDir).split('\n')[0].trim()
-  const branch = isBranch ? (requestedRef || defaultBranch(targetDir)) : null
   // what this clone last saw the remote branch pointing at, read before fetching so that local commits can later be told apart from a remote that rewrote its history
-  const lastSynced = isBranch ? gitOrNull(['rev-parse', `${remote}/${branch}`], targetDir) : null
+  const lastSynced = wantBranch === null ? null : gitOrNull(['rev-parse', `${remote}/${wantBranch}`], targetDir)
 
   git(['fetch', '--all', '--tags'], targetDir)
-  if (gitOrNull(['cat-file', '-e', `${commit}^{commit}`], targetDir) === null) return 'reclone' // the commit the spec resolves to cannot be obtained at all
+  if (gitOrNull(['cat-file', '-e', `${commit}^{commit}`], targetDir) === null) { // the commit the spec resolves to cannot be obtained at all
+    logger.log('Cannot reach ' + commit + ' from ' + url + '.')
+    return 'reclone'
+  }
 
-  if (!isBranch) { // a tag, commit id or semver range can only be checked out detached
+  const branch = expectedBranch(targetDir, remote, requestedRef, requestedRange) // recomputed now that the remote-tracking refs are current
+  if (branch === null) { // a tag, commit id or semver range can only be checked out detached
     git(['checkout', '--detach', commit], targetDir)
     logger.log(`Successfully checked out ${requestedRef || commit}.`)
     return true
   }
 
   git(['checkout', branch], targetDir) // a branch stays checked out so the working tree remains usable
-  const head = git(['rev-parse', 'HEAD'], targetDir)
-  if (head === commit) {
-    logger.log('Already up to date: ' + targetDir + ' from ' + url + ' is already up to date.')
-    return false
+  const branchHead = git(['rev-parse', 'HEAD'], targetDir)
+  if (branchHead === commit) {
+    logger.log(`Successfully checked out ${branch}.`)
+    return true
   }
-  if (gitOrNull(['merge-base', '--is-ancestor', head, commit], targetDir) !== null) { // the branch simply moved ahead, so fast forward onto what was just fetched
+  if (gitOrNull(['merge-base', '--is-ancestor', branchHead, commit], targetDir) !== null) { // the branch simply moved ahead, so fast forward onto what was just fetched
     git(['merge', '--ff-only', commit], targetDir)
     logger.log(`Successfully updated branch ${branch}.`)
     return true
   }
-  if (gitOrNull(['merge-base', '--is-ancestor', commit, head], targetDir) !== null) { // local commits sit on top of the remote, so there is nothing to pull
+  if (gitOrNull(['merge-base', '--is-ancestor', commit, branchHead], targetDir) !== null) { // local commits sit on top of the remote, so there is nothing to pull
     logger.log('Leaving ' + targetDir + ' alone because it has local commits that are ahead of ' + branch + '.')
     return false
   }
-  if (head === lastSynced) return 'reclone' // the clone never moved, so the remote rewrote its history and there is no local work to lose
+  if (branchHead === lastSynced) { // the clone never moved, so the history it holds came from the remote and there is no local work to lose
+    logger.log(targetDir + ' no longer shares history with ' + branch + ' on ' + url + '.')
+    return 'reclone'
+  }
   throw new Error(`${targetDir} has diverged from ${branch} on ${url}. Reconcile or remove it by hand; refusing to re-clone over local commits.`)
 }
 
@@ -136,14 +208,20 @@ function fetchGitDependency (spec, parsed, targetDir, parentDir, dependency) {
       logger.error('Cannot update ' + targetDir + ' because it does not appear to be a git repo!')
       return 'skip' // move on to next dep
     }
-    if (!fs.readFileSync(targetDir + '/.git/config', 'utf8').includes(url)) { // scan .git/config to check if url supplied exists within it
-      logger.log('Removing ' + targetDir + ' from ' + url + ' because a different git url was supplied. It will be re-cloned.')
+    const remote = gitOrNull(['remote'], targetDir)
+    if (remote === null || remote === '') {
+      logger.log('Removing ' + targetDir + ' because it has no git remote. It will be re-cloned.')
       fs.rmSync(path.resolve(targetDir), { recursive: true, force: true })
       reClone = true
     } else {
+      // a different url is often just another mirror of the same repo, which fallback lists are full of, so repoint the remote and let the update decide whether the history actually matches rather than rebuilding on the url alone
+      if (!fs.readFileSync(targetDir + '/.git/config', 'utf8').includes(url)) {
+        logger.log('Pointing ' + targetDir + ' at ' + url + ' because a different git url was supplied.')
+        git(['remote', 'set-url', remote.split('\n')[0].trim(), url], targetDir)
+      }
       const updated = updateGitClone(targetDir, url, commit, requestedRef, requestedRange)
       if (updated !== 'reclone') return updated
-      logger.log('Removing ' + targetDir + ' because ' + commit + ' is no longer reachable from ' + url + '. It will be re-cloned.')
+      logger.log('Removing ' + targetDir + '. It will be re-cloned.')
       fs.rmSync(path.resolve(targetDir), { recursive: true, force: true })
       reClone = true
     }
@@ -173,7 +251,7 @@ function fetchGitDependency (spec, parsed, targetDir, parentDir, dependency) {
 
 // fetch a registry spec into targetDir, returning false if what is already there is up to date
 async function fetchRegistryDependency (spec, targetDir) {
-  const manifest = await pacote.manifest(spec.raw)
+  const manifest = await pacote.manifest(spec.raw, npmOpts)
   if (fs.existsSync(targetDir)) {
     let installed
     try {
@@ -188,21 +266,33 @@ async function fetchRegistryDependency (spec, targetDir) {
     fs.rmSync(path.resolve(targetDir), { recursive: true, force: true })
   }
   logger.log('Extracting ' + manifest.name + '@' + manifest.version + ' to ' + targetDir)
-  await pacote.extract(spec.raw, targetDir)
+  await pacote.extract(spec.raw, targetDir, npmOpts)
   return true
 }
 
-// run npm ci inside a freshly fetched dependency, if it ships a lockfile
-function installDependencies (listType, targetDir, dependency) {
-  if (!fs.existsSync(targetDir + '/package-lock.json')) return
-  logger.log('Running npm ci on ' + targetDir + '...')
-  const args = ['ci']
-  if (listType === 'fallbackDependencies') args.push('--omit=dev')
+// install a fetched dependency's own dependencies, and build it the way npm builds a git dependency
+//
+// npm runs a git dependency's prepare script, installing its devDependencies first because that is where the build toolchain lives; npm ci and npm install both run prepare themselves, so the work here is deciding which command to run and whether devDependencies are needed
+function installDependencies (listType, targetDir, dependency, isGit) {
+  const hasLockfile = fs.existsSync(targetDir + '/package-lock.json')
+  let manifest
+  try {
+    manifest = JSON.parse(fs.readFileSync(targetDir + '/package.json', 'utf8'))
+  } catch {
+    manifest = {}
+  }
+  const skipPrepare = process.env.FALLBACK_DEPENDENCIES_SKIP_PREPARE || pkg[listType].skipPrepare
+  const build = isGit && !skipPrepare && Boolean(manifest.scripts && manifest.scripts.prepare)
+  if (!hasLockfile && !build) return // nothing to install and nothing to build
+
+  const args = [hasLockfile ? 'ci' : 'install']
+  if (listType === 'fallbackDependencies' && !build) args.push('--omit=dev') // devDependencies are kept when a build needs them
   if (process.env.FALLBACK_DEPENDENCIES_NPM_CI_ARGS || pkg[listType].npmCiArgs) { // add specified args to npm ci
     const npmCiArgs = process.env.FALLBACK_DEPENDENCIES_NPM_CI_ARGS ? process.env.FALLBACK_DEPENDENCIES_NPM_CI_ARGS : pkg[listType].npmCiArgs
     if (Array.isArray(npmCiArgs)) args.push(...npmCiArgs)
     else args.push(...npmCiArgs.split(' '))
   }
+  logger.log('Running npm ' + args[0] + ' on ' + targetDir + (build ? ' and building it with its prepare script...' : '...'))
   const output = spawnSync('npm', args, {
     env: Object.assign(process.env, {
       FALLBACK_DEPENDENCIES_INITIATED_COMMAND: true
@@ -288,12 +378,12 @@ async function processList (listType) {
         const parsed = parseSpec(spec)
         let updated
         if (parsed.type === 'git') {
-          const resolved = await pacote.resolve(spec) // ask pacote to turn the spec into a url and an exact commit
+          const resolved = await pacote.resolve(spec, npmOpts) // ask pacote to turn the spec into a url and an exact commit
           updated = fetchGitDependency({ raw: spec, resolved }, parsed, targetDir, fallbackDependenciesDir, dependency)
           if (updated === 'skip') break // move on to next dep
         } else updated = await fetchRegistryDependency({ raw: spec }, targetDir)
         if (!updated && !rerunNpmCi) break // stop checking fallbacks
-        if (!skipDeps) installDependencies(listType, targetDir, dependency)
+        if (!skipDeps) installDependencies(listType, targetDir, dependency, parsed.type === 'git')
         break // if it successfully fetches, skip trying the fallback
       } catch (e) {
         if (fallbacks.length === i + 1) {

@@ -29,6 +29,7 @@ Next, add a `fallbackDependencies` entry to your `package.json` alongside your `
 - `rerunNpmCi` *[Boolean]*: Option to run `npm ci` on clones even if they already exist. Default: `false`.
 - `npmCiArgs` *[String or Array of Strings]*: Additional arguments to pass to `npm ci` command. Default: `undefined`.
 - `removeStaleDirectories` *[Boolean]*: Removes stale directories from dependency target folder. Default: `false`.
+- `skipPrepare` *[Boolean]*: Skips running the `prepare` script of a git fallback-dependency, which npm would otherwise run to build it. Default: `false`.
 
 Example of `reposFile` usage:
 
