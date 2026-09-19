@@ -103,7 +103,5 @@ dist
 # TernJS port file
 .tern-port
 
-test/clones
-test/repos
 
 .npm-cache

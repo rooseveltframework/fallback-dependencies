@@ -1,3 +1,18 @@
+## 2.0.0
+
+- Breaking: dependencies are now declared using [npm package specs](https://docs.npmjs.com/cli/v11/using-npm/package-spec) instead of the `<url> -b <version>` syntax. You will need to migrate to the new syntax; dependencies declared using the old syntax are rejected with an error explaining how to update them.
+  - How to migrate:
+    - `"https://example.com/team/thing.git -b 1.0.5"` → `"git+https://example.com/team/thing.git#1.0.5"`
+    - `"https://example.com/team/thing.git -b main"` → `"git+https://example.com/team/thing.git#main"`
+    - `"https://example.com/team/thing.git -b 0f4bcd1"` → `"git+https://example.com/team/thing.git#0f4bcd1"`
+    - `"/absolute/path/to/repo.git"` → `"git+file:///absolute/path/to/repo.git"`
+- Breaking: minimum supported Node.js version is now 22.20.0.
+- Added support for fetching fallback-dependencies from the npm registry, e.g. `"teddy@^1.0.0"`.
+- Added support for resolving a version from a repo's tags with a semver range, e.g. `"#semver:^1.0.0"`.
+- Added support for git hosts that npm has no shorthand for, and for `git+file://` urls. Previously only GitHub, GitLab, and Bitbucket urls could be resolved.
+- Fixed the spec transport being rewritten to HTTPS, which broke authentication for repos that are only reachable over SSH.
+- Updated dependencies.
+
 ## 1.1.4
 
 - Fixed bug where attempting to checkout a new tag present only on the remote incorrectly reported the clone was already on that version.
