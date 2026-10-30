@@ -200,6 +200,27 @@ test('updating dependencies that are already present', async t => {
     assert.ok(fs.existsSync(path.join(dep, 'marker.txt')), 'the clone should have been reused, not recloned')
   })
 
+  await t.test('updates a clone when a tag on the remote has been moved to a different commit', t => {
+    const sandbox = sandboxed(t)
+    const repo = versionedRepo(sandbox)
+    const app = createApp(sandbox, { dir: 'lib', repos: { dep: `${repo.url}#v1.0.0` } })
+    run(app)
+    const dep = path.join(app, 'lib/dep')
+
+    // re-tag v1.0.0 on the remote to point at main and add a v1.3.0 tag
+    git(['tag', '-f', 'v1.0.0', 'main'], repo.work)
+    git(['push', '-q', '--force', '--tags', repo.bare], repo.work)
+    addCommit(repo, { 'package.json': { name: 'dep', version: '1.3.0' } }, { tag: 'v1.3.0' })
+
+    const pkg = JSON.parse(fs.readFileSync(path.join(app, 'package.json'), 'utf8'))
+    pkg.fallbackDependencies.repos.dep = `${repo.url}#v1.3.0`
+    fs.writeFileSync(path.join(app, 'package.json'), JSON.stringify(pkg, null, 2))
+    const result = run(app)
+
+    assert.equal(result.status, 0, result.output)
+    assert.equal(installedVersion(dep), '1.3.0')
+  })
+
   // running the script twice with nothing changed upstream must not touch the clone
   for (const [label, spec] of [['no committish', ''], ['a branch', '#main'], ['a tag', '#v1.0.0'], ['a semver range', '#semver:^1.0.0']]) {
     await t.test(`leaves an up to date clone alone when the spec names ${label}`, t => {
@@ -490,6 +511,8 @@ test('fallback behavior', async t => {
     assert.equal(result.status, 1)
     assert.match(result.output, /1 out of 1 dependencies failed to clone/)
     assert.match(result.output, /dep/)
+    assert.match(result.output, /a\.git/, 'should log the error from the first fallback')
+    assert.match(result.output, /b\.git/, 'should log the error from the final fallback')
   })
 
   await t.test('moves a preferred spec to the front of the list', t => {
