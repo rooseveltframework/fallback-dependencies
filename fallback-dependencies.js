@@ -159,7 +159,7 @@ function updateGitClone (targetDir, url, commit, requestedRef, requestedRange) {
   // what this clone last saw the remote branch pointing at, read before fetching so that local commits can later be told apart from a remote that rewrote its history
   const lastSynced = wantBranch === null ? null : gitOrNull(['rev-parse', `${remote}/${wantBranch}`], targetDir)
 
-  git(['fetch', '--all', '--tags'], targetDir)
+  git(['fetch', '--all', '--tags', '--force'], targetDir)
   if (gitOrNull(['cat-file', '-e', `${commit}^{commit}`], targetDir) === null) { // the commit the spec resolves to cannot be obtained at all
     logger.log('Cannot reach ' + commit + ' from ' + url + '.')
     return 'reclone'
@@ -366,6 +366,7 @@ async function processList (listType) {
       fallbacks = [fallbacks] // coerce to an array of one member if given a string
     }
     const targetDir = fallbackDependenciesDir + '/' + dependency
+    const errors = []
     for (const [i, fallback] of fallbacks.entries()) {
       let spec = fallback
       const rerunNpmCi = process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI || pkg[listType].rerunNpmCi
@@ -386,9 +387,10 @@ async function processList (listType) {
         if (!skipDeps) installDependencies(listType, targetDir, dependency, parsed.type === 'git')
         break // if it successfully fetches, skip trying the fallback
       } catch (e) {
+        errors.push(e)
         if (fallbacks.length === i + 1) {
           logger.error('Unable to resolve dependency ' + dependency + ' — all fallbacks failed to clone!\n')
-          logger.error(e)
+          for (const err of errors) logger.error(err)
           failedDependencies.push(dependency)
           failedToClone++
         } else {

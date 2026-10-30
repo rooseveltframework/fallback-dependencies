@@ -1,3 +1,8 @@
+## 2.0.3
+
+- Fixed updating an existing clone failing when a tag on the remote had been moved to a different commit.
+- Fixed only the final fallback's error being logged when all fallbacks for a dependency fail. Every failed attempt's error is now reported.
+
 ## 2.0.2
 
 - Altered git fallback-dependencies with a `prepare` script to now build the way npm builds them, with their `devDependencies` installed. Set `skipPrepare`, or the `FALLBACK_DEPENDENCIES_SKIP_PREPARE` environment variable, to opt out.
