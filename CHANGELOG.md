@@ -2,6 +2,7 @@
 
 - Fixed updating an existing clone failing when a tag on the remote had been moved to a different commit.
 - Fixed only the final fallback's error being logged when all fallbacks for a dependency fail. Every failed attempt's error is now reported.
+- Updated various dependencies.
 
 ## 2.0.2
 
