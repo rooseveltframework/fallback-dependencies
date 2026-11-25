@@ -935,3 +935,77 @@ test('building git dependencies', async t => {
     assert.doesNotMatch(result.output, /prepare script/)
   })
 })
+
+test('up-to-date detection performance paths', async t => {
+  await t.test('detects an up to date short commit id without touching the remote', t => {
+    const sandbox = sandboxed(t)
+    const repo = versionedRepo(sandbox)
+    const shortSha = repo.commitIds.v11.slice(0, 7)
+    const app = createApp(sandbox, { dir: 'lib', repos: { dep: `${repo.url}#${shortSha}` } })
+
+    const first = run(app)
+    assert.equal(first.status, 0, first.output)
+    const dep = path.join(app, 'lib/dep')
+    assert.equal(git(['rev-parse', 'HEAD'], dep), repo.commitIds.v11)
+    assert.equal(currentBranch(dep), null)
+
+    // remove the bare remote so any attempt by pacote to resolve or temp-clone would fail
+    fs.rmSync(repo.bare, { recursive: true, force: true })
+    const second = run(app)
+
+    assert.equal(second.status, 0, second.output)
+    assert.match(second.output, /Already up to date/)
+    assert.equal(git(['rev-parse', 'HEAD'], dep), repo.commitIds.v11)
+  })
+
+  await t.test('detects an already extracted exact registry version without querying the registry', t => {
+    const sandbox = sandboxed(t)
+    const app = createApp(sandbox, { dir: 'lib', repos: { logger: 'roosevelt-logger@1.0.1' } })
+
+    assert.equal(run(app).status, 0)
+
+    // point npm at an unreachable registry so any manifest request would fail
+    fs.writeFileSync(path.join(app, '.npmrc'), 'registry=http://127.0.0.1:1/\nfetch-retries=0\n')
+    const second = run(app)
+
+    assert.equal(second.status, 0, second.output)
+    assert.match(second.output, /already at version 1\.0\.1/)
+  })
+
+  await t.test('handles a mixed batch of up to date, updated, fresh, and fallback dependencies concurrently', t => {
+    const sandbox = sandboxed(t)
+    const unchanged = versionedRepo(sandbox, 'unchanged')
+    const moving = versionedRepo(sandbox, 'moving')
+    const fresh = versionedRepo(sandbox, 'fresh')
+    const dead = 'git+http://127.0.0.1:1/unreachable'
+
+    const app = createApp(sandbox, {
+      dir: 'lib',
+      repos: {
+        unchanged: `${unchanged.url}#v1.0.0`,
+        moving: `${moving.url}#main`
+      }
+    })
+    assert.equal(run(app).status, 0)
+
+    // advance moving, add fresh, and put an unreachable host ahead of every repo
+    addCommit(moving, { 'package.json': { name: 'moving', version: '1.3.0' } })
+    const pkg = JSON.parse(fs.readFileSync(path.join(app, 'package.json'), 'utf8'))
+    pkg.fallbackDependencies.repos = {
+      unchanged: [`${dead}/unchanged.git#v1.0.0`, `${unchanged.url}#v1.0.0`],
+      moving: [`${dead}/moving.git#main`, `${moving.url}#main`],
+      fresh: [`${dead}/fresh.git#v1.1.0`, `${fresh.url}#v1.1.0`]
+    }
+    fs.writeFileSync(path.join(app, 'package.json'), JSON.stringify(pkg, null, 2))
+
+    const result = run(app)
+
+    assert.equal(result.status, 0, result.output)
+    assert.match(result.output, /Already up to date: lib\/unchanged/)
+    assert.equal(installedVersion(path.join(app, 'lib/unchanged')), '1.0.0')
+    assert.equal(installedVersion(path.join(app, 'lib/moving')), '1.3.0')
+    assert.equal(currentBranch(path.join(app, 'lib/moving')), 'main')
+    assert.equal(installedVersion(path.join(app, 'lib/fresh')), '1.1.0')
+    assert.equal(currentBranch(path.join(app, 'lib/fresh')), null)
+  })
+})
