@@ -110,7 +110,8 @@ async function gitOrNullAsync (args, cwd) {
 const DEFAULT_CONCURRENCY = 24 // max dependencies to probe/resolve concurrently
 const SSH_CONCURRENCY = 6 // cap concurrent ssh handshakes below OpenSSH's default MaxStartups (10:30:60)
 const shortShaRe = /^[0-9a-f]{4,39}$/i
-const hostUnreachableRe = /Could not resolve host|Failed to connect|Connection timed out|Operation timed out|Connection refused|Network is unreachable|Name or service not known|Temporary failure in name resolution|ENOTFOUND|ECONNREFUSED|ETIMEDOUT|EHOSTUNREACH|ENETUNREACH/i
+// failures that say the host itself cannot be reached at all; timeouts are deliberately left out because they are often transient and @npmcli/git retries them, so one slow handshake should not write a host off for the whole run
+const hostUnreachableRe = /Could not resolve host|Could(?: not|n't) connect to server|Name or service not known|nodename nor servname provided|No address associated with hostname|Connection refused|Network is unreachable|No route to host|ENOTFOUND|ECONNREFUSED|EHOSTUNREACH|ENETUNREACH/i
 
 // simple async semaphore for bounding concurrent ssh probes
 function createSemaphore (limit) {
@@ -130,15 +131,24 @@ function createSemaphore (limit) {
 
 const runSshLimited = createSemaphore(SSH_CONCURRENCY)
 
-// extract scheme + host[:port] for network urls so host-level transport failures can be cached across waves
-function networkOrigin (url) {
-  if (!url) return null
+const scpLikeRe = /^(?:[^@/:]+@)?([^@/:]+):(?!\/\/)/ // scp-style ssh address such as git@example.com:org/repo.git
+
+// how a git spec reaches the network: an origin key (scheme + host[:port]) so host-level transport failures can be cached across dependencies, and whether resolving it may open an ssh connection
+function gitTransport (parsed) {
+  const url = parsed.fetchSpec
+  if (!url) {
+    // a hosted shortcut such as github:org/repo has no fetchSpec; pacote tries https first and falls back to ssh, so it may need an ssh connection
+    if (parsed.hosted) return { origin: `hosted://${parsed.hosted.domain}`, ssh: true }
+    return { origin: null, ssh: false }
+  }
+  const scp = url.match(scpLikeRe)
+  if (scp && !/^[a-z][a-z0-9+.-]*:\/\//i.test(url)) return { origin: `ssh://${scp[1].toLowerCase()}`, ssh: true }
   try {
-    const parsed = new URL(url)
-    if (parsed.protocol === 'file:') return null
-    return `${parsed.protocol}//${parsed.host}`
+    const u = new URL(url)
+    if (u.protocol === 'file:') return { origin: null, ssh: false }
+    return { origin: `${u.protocol}//${u.host}`, ssh: u.protocol === 'ssh:' }
   } catch {
-    return null
+    return { origin: null, ssh: false }
   }
 }
 
@@ -399,9 +409,11 @@ async function extractRegistryDependency (spec, manifest, targetDir) {
 }
 
 // resolve a git spec via pacote, caching host-level network unreachability across dependencies and skipping retry backoff when another fallback is waiting
+//
+// a cached dead host is only skipped while another fallback is waiting; a dependency's last fallback always gets a real attempt with retries, so a host written off by some other dependency cannot fail one that has nowhere else to go
 async function resolveGitSpec (spec, parsed, hasMoreFallbacks, deadHosts) {
-  const origin = networkOrigin(parsed.fetchSpec)
-  if (origin && deadHosts.has(origin)) throw deadHosts.get(origin)
+  const { origin, ssh: isSsh } = gitTransport(parsed)
+  if (origin && hasMoreFallbacks && deadHosts.has(origin)) throw deadHosts.get(origin)
   const resolveOpts = (hasMoreFallbacks && npmOpts.fetchRetries === undefined)
     ? { ...npmOpts, retry: { retries: 0 } }
     : npmOpts
@@ -410,7 +422,6 @@ async function resolveGitSpec (spec, parsed, hasMoreFallbacks, deadHosts) {
     const resolved = npa(resolvedString)
     return { url: resolved.fetchSpec, commit: resolved.gitCommittish }
   }
-  const isSsh = Boolean(parsed.fetchSpec && /^ssh:/i.test(parsed.fetchSpec))
   try {
     return isSsh ? await runSshLimited(resolve) : await resolve()
   } catch (e) {
@@ -433,7 +444,8 @@ async function probeDependency (entry, deadHosts) {
   const logs = []
   let localPromise = null
   const getLocalGit = () => {
-    if (!localPromise) localPromise = inspectLocalGit(targetDir)
+    // a local inspection failure is not a fault of the fallback being resolved, so report no usable remote and leave the authoritative checks to the update phase instead of failing this fallback
+    if (!localPromise) localPromise = inspectLocalGit(targetDir).catch(() => ({ exists: fs.existsSync(targetDir), isGitRepo: true, remote: null }))
     return localPromise
   }
 

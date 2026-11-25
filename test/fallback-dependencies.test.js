@@ -1008,4 +1008,16 @@ test('up-to-date detection performance paths', async t => {
     assert.equal(installedVersion(path.join(app, 'lib/fresh')), '1.1.0')
     assert.equal(currentBranch(path.join(app, 'lib/fresh')), null)
   })
+
+  await t.test('gives the last fallback a real attempt even when its host was already written off', t => {
+    const sandbox = sandboxed(t)
+    const dead = 'git+http://127.0.0.1:1'
+    const app = createApp(sandbox, { dir: 'lib', repos: { dep: [`${dead}/first.git#main`, `${dead}/last.git#main`] } })
+
+    const result = run(app)
+
+    // the first fallback marks the host dead; the last one must still be tried for itself rather than failing with the cached error from first.git
+    assert.equal(result.status, 1, result.output)
+    assert.match(result.output, /last\.git/)
+  })
 })
