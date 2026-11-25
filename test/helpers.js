@@ -45,6 +45,7 @@ function createRepo (sandbox, name, commits) {
   git(['config', 'user.email', 'test@example.com'], work)
   git(['config', 'user.name', 'fallback-dependencies tests'], work)
   git(['config', 'commit.gpgsign', 'false'], work)
+  git(['config', 'tag.gpgsign', 'false'], work)
 
   const tags = {}
   const commitIds = {}

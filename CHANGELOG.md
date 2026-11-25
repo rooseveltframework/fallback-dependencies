@@ -1,3 +1,11 @@
+## 2.0.4
+
+- Improved up-to-date detection performance by resolving specs and inspecting existing targets concurrently across dependencies instead of one at a time, while still applying any needed updates, clones, and `npm ci` runs in declared order.
+- Improved local git checks to run asynchronously alongside remote resolution rather than spawning multiple blocking `git` calls per dependency, and avoided a duplicate `git ls-remote` network round-trip when cloning a named ref.
+- Improved fallback speed when a higher-priority host is unreachable by skipping connection retry backoff when another fallback is available and caching host-level network failures for the remainder of the run.
+- Improved up-to-date checks for existing clones already detached on a short commit id by no longer triggering a temporary clone during resolution.
+- Updated dependencies.
+
 ## 2.0.3
 
 - Fixed updating an existing clone failing when a tag on the remote had been moved to a different commit.

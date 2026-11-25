@@ -79,6 +79,89 @@ function gitOrNull (args, cwd) {
   return result.status === 0 ? result.stdout.toString().trim() : null
 }
 
+// async equivalents used during the concurrent up-to-date check phase so local git calls do not block the event loop
+function gitAsync (args, cwd) {
+  return new Promise((resolve, reject) => {
+    const child = spawn('git', args, {
+      shell: false,
+      cwd,
+      stdio: ['ignore', 'pipe', 'pipe']
+    })
+    let stdout = ''
+    let stderr = ''
+    child.stdout.on('data', chunk => { stdout += chunk })
+    child.stderr.on('data', chunk => { stderr += chunk })
+    child.on('error', reject)
+    child.on('close', code => {
+      if (code !== 0) reject(stderr)
+      else resolve(stdout.trim())
+    })
+  })
+}
+
+async function gitOrNullAsync (args, cwd) {
+  try {
+    return await gitAsync(args, cwd)
+  } catch {
+    return null
+  }
+}
+
+const DEFAULT_CONCURRENCY = 24 // max dependencies to probe/resolve concurrently
+const SSH_CONCURRENCY = 6 // cap concurrent ssh handshakes below OpenSSH's default MaxStartups (10:30:60)
+const shortShaRe = /^[0-9a-f]{4,39}$/i
+const hostUnreachableRe = /Could not resolve host|Failed to connect|Connection timed out|Operation timed out|Connection refused|Network is unreachable|Name or service not known|Temporary failure in name resolution|ENOTFOUND|ECONNREFUSED|ETIMEDOUT|EHOSTUNREACH|ENETUNREACH/i
+
+// simple async semaphore for bounding concurrent ssh probes
+function createSemaphore (limit) {
+  let active = 0
+  const queue = []
+  return async function run (fn) {
+    if (active >= limit) await new Promise(resolve => queue.push(resolve))
+    active++
+    try {
+      return await fn()
+    } finally {
+      active--
+      if (queue.length > 0) queue.shift()()
+    }
+  }
+}
+
+const runSshLimited = createSemaphore(SSH_CONCURRENCY)
+
+// extract scheme + host[:port] for network urls so host-level transport failures can be cached across waves
+function networkOrigin (url) {
+  if (!url) return null
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol === 'file:') return null
+    return `${parsed.protocol}//${parsed.host}`
+  } catch {
+    return null
+  }
+}
+
+function errorMessage (err) {
+  if (!err) return ''
+  if (typeof err === 'string') return err
+  return [err.message, err.stderr, err.code].filter(Boolean).join('\n')
+}
+
+// run an async worker over items with bounded concurrency, preserving input order in the returned array
+async function mapWithConcurrency (items, limit, worker) {
+  const results = new Array(items.length)
+  let nextIndex = 0
+  const count = Math.min(limit, items.length)
+  await Promise.all(Array.from({ length: count }, async () => {
+    while (nextIndex < items.length) {
+      const index = nextIndex++
+      results[index] = await worker(items[index], index)
+    }
+  }))
+  return results
+}
+
 // sanity check that git actually works
 function assertGitWorks () {
   return new Promise((resolve, reject) => {
@@ -117,18 +200,10 @@ function parseSpec (spec) {
   return parsed
 }
 
-// determine whether a ref names a branch on the remote; only branches can be left checked out in a tracking state, tags and commit ids have to be detached
-function refIsBranch (url, ref, range) {
-  if (range) return false // a semver range resolves to a tag, which has to be detached
-  if (!ref) return true // no ref means the remote's default branch, which is always a branch
-  if (/^[0-9a-f]{40}$/i.test(ref)) return false // a full commit id can never be a branch name
-  return git(['ls-remote', '--heads', url, ref]) !== ''
-}
-
 // name of the branch the remote points HEAD at
-function defaultBranch (dir) {
-  const remote = git(['remote'], dir).split('\n')[0].trim()
-  return git(['rev-parse', '--abbrev-ref', `${remote}/HEAD`], dir).replace(remote + '/', '')
+function defaultBranch (dir, remote) {
+  const name = remote || git(['remote'], dir).split('\n')[0].trim()
+  return git(['rev-parse', '--abbrev-ref', `${name}/HEAD`], dir).replace(name + '/', '')
 }
 
 // the branch the spec expects the clone to be sitting on, or null when the spec pins a commit that has to be checked out detached
@@ -136,16 +211,62 @@ function defaultBranch (dir) {
 // answered from the clone's own remote-tracking refs so that a run with nothing to do costs no network; a branch created upstream since the last fetch reads as a tag here, which only leaves the clone detached on the right commit until something else changes
 function expectedBranch (targetDir, remote, requestedRef, requestedRange) {
   if (requestedRange) return null // a semver range resolves to a tag
-  if (!requestedRef) return defaultBranch(targetDir) // no committish means the remote's default branch
+  if (!requestedRef) return defaultBranch(targetDir, remote) // no committish means the remote's default branch
   if (/^[0-9a-f]{40}$/i.test(requestedRef)) return null // a full commit id can never be a branch name
   return gitOrNull(['show-ref', '--verify', `refs/remotes/${remote}/${requestedRef}`], targetDir) === null ? null : requestedRef
+}
+
+async function expectedBranchAsync (targetDir, remote, requestedRef, requestedRange) {
+  if (requestedRange) return null // a semver range resolves to a tag
+  if (!requestedRef) {
+    const ref = await gitOrNullAsync(['rev-parse', '--abbrev-ref', `${remote}/HEAD`], targetDir)
+    return ref ? ref.replace(remote + '/', '') : null
+  }
+  if (/^[0-9a-f]{40}$/i.test(requestedRef)) return null // a full commit id can never be a branch name
+  return (await gitOrNullAsync(['show-ref', '--verify', `refs/remotes/${remote}/${requestedRef}`], targetDir)) === null ? null : requestedRef
+}
+
+// read the local git state needed to decide whether targetDir is already up to date, running concurrently with network resolution
+async function inspectLocalGit (targetDir) {
+  if (!fs.existsSync(targetDir)) return { exists: false }
+  const configPath = targetDir + '/.git/config'
+  if (!fs.existsSync(configPath)) return { exists: true, isGitRepo: false }
+  const [remoteOut, configText, revOut] = await Promise.all([
+    gitOrNullAsync(['remote'], targetDir),
+    fs.promises.readFile(configPath, 'utf8'),
+    gitOrNullAsync(['rev-parse', 'HEAD', '--symbolic-full-name', 'HEAD'], targetDir)
+  ])
+  const remote = remoteOut ? remoteOut.split('\n')[0].trim() : ''
+  if (!remote) return { exists: true, isGitRepo: true, remote: null, configText }
+  let head = null
+  let onBranch = null
+  if (revOut) {
+    const [sha, symref] = revOut.split('\n')
+    head = sha || null
+    onBranch = symref && symref.startsWith('refs/heads/') ? symref.slice('refs/heads/'.length) : null
+  }
+  return { exists: true, isGitRepo: true, remote, configText, head, onBranch }
+}
+
+// a short commit id is not in ls-remote, so pacote would otherwise clone the entire repo into a temp dir just to expand it; skip that when the existing clone is already detached on that exact commit
+async function matchesLocalShortSha (parsed, targetDir, local) {
+  const ref = parsed.gitCommittish
+  if (!ref || parsed.gitRange || !shortShaRe.test(ref)) return false
+  if (!local.exists || !local.isGitRepo || !local.remote || !local.head || local.onBranch !== null) return false
+  if (!parsed.fetchSpec || !local.configText.includes(parsed.fetchSpec)) return false
+  if (!local.head.toLowerCase().startsWith(ref.toLowerCase())) return false
+  const [asBranch, asTag] = await Promise.all([
+    gitOrNullAsync(['show-ref', '--verify', `refs/remotes/${local.remote}/${ref}`], targetDir),
+    gitOrNullAsync(['show-ref', '--verify', `refs/tags/${ref}`], targetDir)
+  ])
+  return asBranch === null && asTag === null
 }
 
 // bring an existing clone to the commit the spec resolves to, returning false when nothing needed doing or 'reclone' when the clone cannot get there
 //
 // throws rather than recloning when the clone holds commits that starting over would destroy, because these directories are live working copies people commit in
-function updateGitClone (targetDir, url, commit, requestedRef, requestedRange) {
-  const remote = git(['remote'], targetDir).split('\n')[0].trim()
+function updateGitClone (targetDir, url, commit, requestedRef, requestedRange, knownRemote) {
+  const remote = knownRemote || git(['remote'], targetDir).split('\n')[0].trim()
   const head = git(['rev-parse', 'HEAD'], targetDir)
   const onBranch = gitOrNull(['branch', '--show-current'], targetDir) || null // null when the clone is detached
   const wantBranch = expectedBranch(targetDir, remote, requestedRef, requestedRange)
@@ -196,9 +317,8 @@ function updateGitClone (targetDir, url, commit, requestedRef, requestedRange) {
 
 // fetch a git spec into targetDir, returning false if the existing clone was already up to date
 function fetchGitDependency (spec, parsed, targetDir, parentDir, dependency) {
-  const resolved = npa(spec.resolved)
-  const url = resolved.fetchSpec // git-usable url, whether or not the host is one npm has a shorthand for
-  const commit = resolved.gitCommittish // the specific commit the spec resolved to
+  const url = spec.url // git-usable url, whether or not the host is one npm has a shorthand for
+  const commit = spec.commit // the specific commit the spec resolved to
   const requestedRef = parsed.gitCommittish // branch, tag or commit id as the user wrote it, if any
   const requestedRange = parsed.gitRange // semver range as the user wrote it, if any
   let reClone = false
@@ -208,18 +328,19 @@ function fetchGitDependency (spec, parsed, targetDir, parentDir, dependency) {
       logger.error('Cannot update ' + targetDir + ' because it does not appear to be a git repo!')
       return 'skip' // move on to next dep
     }
-    const remote = gitOrNull(['remote'], targetDir)
-    if (remote === null || remote === '') {
+    const remoteOut = gitOrNull(['remote'], targetDir)
+    if (remoteOut === null || remoteOut === '') {
       logger.log('Removing ' + targetDir + ' because it has no git remote. It will be re-cloned.')
       fs.rmSync(path.resolve(targetDir), { recursive: true, force: true })
       reClone = true
     } else {
+      const remote = remoteOut.split('\n')[0].trim()
       // a different url is often just another mirror of the same repo, which fallback lists are full of, so repoint the remote and let the update decide whether the history actually matches rather than rebuilding on the url alone
       if (!fs.readFileSync(targetDir + '/.git/config', 'utf8').includes(url)) {
         logger.log('Pointing ' + targetDir + ' at ' + url + ' because a different git url was supplied.')
-        git(['remote', 'set-url', remote.split('\n')[0].trim(), url], targetDir)
+        git(['remote', 'set-url', remote, url], targetDir)
       }
-      const updated = updateGitClone(targetDir, url, commit, requestedRef, requestedRange)
+      const updated = updateGitClone(targetDir, url, commit, requestedRef, requestedRange, remote)
       if (updated !== 'reclone') return updated
       logger.log('Removing ' + targetDir + '. It will be re-cloned.')
       fs.rmSync(path.resolve(targetDir), { recursive: true, force: true })
@@ -229,11 +350,10 @@ function fetchGitDependency (spec, parsed, targetDir, parentDir, dependency) {
 
   if (reClone || !fs.existsSync(targetDir)) {
     logger.log('Trying to clone ' + url + ' ' + dependency)
-    const isBranch = refIsBranch(url, requestedRef, requestedRange)
+    // when no ref or range is specified we want the default branch directly; otherwise clone with --no-checkout and inspect the clone's local remote-tracking refs instead of paying for a second network ls-remote
+    const defaultBranchOnly = !requestedRef && !requestedRange
     const args = ['clone']
-    if (isBranch) {
-      if (requestedRef) args.push('-b', requestedRef)
-    } else args.push('--no-checkout') // avoid checking out a tree we are about to replace
+    if (!defaultBranchOnly) args.push('--no-checkout') // avoid checking out a tree we are about to replace
     args.push(url, dependency)
     const output = spawnSync('git', args, {
       shell: false,
@@ -241,24 +361,32 @@ function fetchGitDependency (spec, parsed, targetDir, parentDir, dependency) {
       cwd: path.resolve(parentDir) // where we're cloning the repo to
     })
     if (output.status !== 0) throw new Error(`failed to clone ${url}`)
-    if (!isBranch) {
-      git(['checkout', '--detach', commit], targetDir)
-      logger.log(`Successfully cloned ${url} and checked out ${requestedRef || commit}.`)
+    if (!defaultBranchOnly) {
+      const remote = git(['remote'], targetDir).split('\n')[0].trim()
+      const branch = expectedBranch(targetDir, remote, requestedRef, requestedRange)
+      if (branch !== null) {
+        git(['checkout', '-B', branch, '--track', `${remote}/${branch}`], targetDir)
+      } else {
+        git(['checkout', '--detach', commit], targetDir)
+        logger.log(`Successfully cloned ${url} and checked out ${requestedRef || commit}.`)
+      }
     }
   }
   return true
 }
 
-// fetch a registry spec into targetDir, returning false if what is already there is up to date
-async function fetchRegistryDependency (spec, targetDir) {
-  const manifest = await pacote.manifest(spec.raw, npmOpts)
+function readInstalledPackageJson (targetDir) {
+  try {
+    return JSON.parse(fs.readFileSync(targetDir + '/package.json', 'utf8'))
+  } catch {
+    return null
+  }
+}
+
+// extract a registry spec into targetDir using an already-resolved manifest
+async function extractRegistryDependency (spec, manifest, targetDir) {
   if (fs.existsSync(targetDir)) {
-    let installed
-    try {
-      installed = JSON.parse(fs.readFileSync(targetDir + '/package.json', 'utf8'))
-    } catch {
-      installed = null
-    }
+    const installed = readInstalledPackageJson(targetDir)
     if (installed && installed.version === manifest.version) {
       logger.log('Already up to date: ' + targetDir + ' is already at version ' + manifest.version + '.')
       return false
@@ -268,6 +396,167 @@ async function fetchRegistryDependency (spec, targetDir) {
   logger.log('Extracting ' + manifest.name + '@' + manifest.version + ' to ' + targetDir)
   await pacote.extract(spec.raw, targetDir, npmOpts)
   return true
+}
+
+// resolve a git spec via pacote, caching host-level network unreachability across dependencies and skipping retry backoff when another fallback is waiting
+async function resolveGitSpec (spec, parsed, hasMoreFallbacks, deadHosts) {
+  const origin = networkOrigin(parsed.fetchSpec)
+  if (origin && deadHosts.has(origin)) throw deadHosts.get(origin)
+  const resolveOpts = (hasMoreFallbacks && npmOpts.fetchRetries === undefined)
+    ? { ...npmOpts, retry: { retries: 0 } }
+    : npmOpts
+  const resolve = async () => {
+    const resolvedString = await pacote.resolve(spec, resolveOpts)
+    const resolved = npa(resolvedString)
+    return { url: resolved.fetchSpec, commit: resolved.gitCommittish }
+  }
+  const isSsh = Boolean(parsed.fetchSpec && /^ssh:/i.test(parsed.fetchSpec))
+  try {
+    return isSsh ? await runSshLimited(resolve) : await resolve()
+  } catch (e) {
+    if (origin && hostUnreachableRe.test(errorMessage(e))) deadHosts.set(origin, e)
+    throw e
+  }
+}
+
+function splitSpecFlags (fallback) {
+  if (fallback.slice(-11) === ' -skip-deps') {
+    return { spec: fallback.slice(0, -11), skipDeps: true }
+  }
+  return { spec: fallback, skipDeps: false }
+}
+
+// phase 1: resolve specs and check whether targetDir is already up to date, without mutating disk so every dependency can be probed in parallel
+async function probeDependency (entry, deadHosts) {
+  const { dependency, fallbacks, targetDir } = entry
+  const errors = []
+  const logs = []
+  let localPromise = null
+  const getLocalGit = () => {
+    if (!localPromise) localPromise = inspectLocalGit(targetDir)
+    return localPromise
+  }
+
+  for (const [i, fallback] of fallbacks.entries()) {
+    const { spec, skipDeps } = splitSpecFlags(fallback)
+    try {
+      const parsed = parseSpec(spec)
+      if (parsed.type === 'git') {
+        let resolved
+        let local
+        if (parsed.gitCommittish && shortShaRe.test(parsed.gitCommittish) && !parsed.gitRange) {
+          local = await getLocalGit()
+          if (await matchesLocalShortSha(parsed, targetDir, local)) {
+            resolved = { url: parsed.fetchSpec, commit: local.head }
+          } else {
+            resolved = await resolveGitSpec(spec, parsed, i < fallbacks.length - 1, deadHosts)
+          }
+        } else {
+          // overlap the local git inspection with the remote ls-remote round-trip
+          const [resolvedResult, localResult] = await Promise.all([
+            resolveGitSpec(spec, parsed, i < fallbacks.length - 1, deadHosts),
+            getLocalGit()
+          ])
+          resolved = resolvedResult
+          local = localResult
+        }
+
+        if (local.exists && !local.isGitRepo) {
+          return {
+            status: 'skip',
+            dependency,
+            targetDir,
+            logs,
+            errorLog: 'Cannot update ' + targetDir + ' because it does not appear to be a git repo!'
+          }
+        }
+
+        if (local.exists && local.remote && local.head === resolved.commit) {
+          const wantBranch = await expectedBranchAsync(targetDir, local.remote, parsed.gitCommittish, parsed.gitRange)
+          if (local.onBranch === wantBranch) {
+            return {
+              status: 'upToDate',
+              isGit: true,
+              dependency,
+              targetDir,
+              skipDeps,
+              url: resolved.url,
+              remote: local.remote,
+              needsRepoint: !local.configText.includes(resolved.url),
+              logs
+            }
+          }
+        }
+
+        return {
+          status: 'needsUpdate',
+          isGit: true,
+          dependency,
+          targetDir,
+          fallbacks,
+          fallbackIndex: i,
+          spec,
+          parsed,
+          resolved,
+          skipDeps,
+          logs,
+          errors
+        }
+      } else {
+        // exact registry versions are immutable, so skip the manifest network request when that exact package and version are already extracted
+        if (parsed.type === 'version' && fs.existsSync(targetDir) && !fs.existsSync(targetDir + '/.git')) {
+          const installed = readInstalledPackageJson(targetDir)
+          if (installed && installed.name === parsed.name && installed.version === parsed.fetchSpec) {
+            return {
+              status: 'upToDate',
+              isGit: false,
+              dependency,
+              targetDir,
+              skipDeps,
+              message: 'Already up to date: ' + targetDir + ' is already at version ' + installed.version + '.',
+              logs
+            }
+          }
+        }
+
+        const manifest = await pacote.manifest(spec, npmOpts)
+        if (fs.existsSync(targetDir)) {
+          const installed = readInstalledPackageJson(targetDir)
+          if (installed && installed.version === manifest.version) {
+            return {
+              status: 'upToDate',
+              isGit: false,
+              dependency,
+              targetDir,
+              skipDeps,
+              message: 'Already up to date: ' + targetDir + ' is already at version ' + manifest.version + '.',
+              logs
+            }
+          }
+        }
+
+        return {
+          status: 'needsUpdate',
+          isGit: false,
+          dependency,
+          targetDir,
+          fallbacks,
+          fallbackIndex: i,
+          spec,
+          parsed,
+          manifest,
+          skipDeps,
+          logs,
+          errors
+        }
+      }
+    } catch (e) {
+      errors.push(e)
+      if (fallbacks.length > i + 1) logs.push('Trying fallback...')
+    }
+  }
+
+  return { status: 'failed', dependency, targetDir, errors, logs }
 }
 
 // install a fetched dependency's own dependencies, and build it the way npm builds a git dependency
@@ -347,8 +636,8 @@ async function processList (listType) {
       process.exit(1)
     }
   }
-  const failedDependencies = []
-  let failedToClone = 0
+  const rerunNpmCi = process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI || pkg[listType].rerunNpmCi
+  const entries = []
   for (let dependency in pkg[listType].repos) {
     const fullDep = dependency
     const depFlags = dependency.split(':')
@@ -365,24 +654,64 @@ async function processList (listType) {
     if (!Array.isArray(fallbacks)) {
       fallbacks = [fallbacks] // coerce to an array of one member if given a string
     }
-    const targetDir = fallbackDependenciesDir + '/' + dependency
-    const errors = []
-    for (const [i, fallback] of fallbacks.entries()) {
-      let spec = fallback
-      const rerunNpmCi = process.env.FALLBACK_DEPENDENCIES_RERUN_NPM_CI || pkg[listType].rerunNpmCi
-      let skipDeps = false
-      if (spec.slice(-11) === ' -skip-deps') {
-        spec = spec.slice(0, -11)
-        skipDeps = true
+    entries.push({
+      dependency,
+      fallbacks,
+      targetDir: fallbackDependenciesDir + '/' + dependency
+    })
+  }
+
+  // phase 1: probe all dependencies concurrently to resolve specs and detect already up-to-date targets
+  const deadHosts = new Map()
+  const probeResults = await mapWithConcurrency(entries, DEFAULT_CONCURRENCY, entry => probeDependency(entry, deadHosts))
+
+  // phase 2: apply updates, clones, and npm installs in declared order so output stays readable and deterministic
+  const failedDependencies = []
+  let failedToClone = 0
+  for (const result of probeResults) {
+    for (const line of result.logs) logger.log(line)
+
+    if (result.status === 'skip') {
+      logger.error(result.errorLog)
+      continue
+    }
+
+    if (result.status === 'upToDate') {
+      if (result.needsRepoint) {
+        logger.log('Pointing ' + result.targetDir + ' at ' + result.url + ' because a different git url was supplied.')
+        git(['remote', 'set-url', result.remote, result.url], result.targetDir)
       }
+      logger.log(result.message || ('Already up to date: ' + result.targetDir + ' from ' + result.url + ' is already up to date.'))
+      if (rerunNpmCi && !result.skipDeps) installDependencies(listType, result.targetDir, result.dependency, result.isGit)
+      continue
+    }
+
+    if (result.status === 'failed') {
+      logger.error('Unable to resolve dependency ' + result.dependency + ' — all fallbacks failed to clone!\n')
+      for (const err of result.errors) logger.error(err)
+      failedDependencies.push(result.dependency)
+      failedToClone++
+      continue
+    }
+
+    // status === 'needsUpdate': apply the already-resolved fallback, and if it fails continue through any remaining fallbacks
+    const { dependency, targetDir, fallbacks, errors } = result
+    for (let i = result.fallbackIndex; i < fallbacks.length; i++) {
+      const preResolved = i === result.fallbackIndex
+      const { spec, skipDeps } = preResolved ? result : splitSpecFlags(fallbacks[i])
       try {
-        const parsed = parseSpec(spec)
+        const parsed = preResolved ? result.parsed : parseSpec(spec)
         let updated
         if (parsed.type === 'git') {
-          const resolved = await pacote.resolve(spec, npmOpts) // ask pacote to turn the spec into a url and an exact commit
-          updated = fetchGitDependency({ raw: spec, resolved }, parsed, targetDir, fallbackDependenciesDir, dependency)
+          const resolved = preResolved
+            ? result.resolved
+            : await resolveGitSpec(spec, parsed, i < fallbacks.length - 1, deadHosts)
+          updated = fetchGitDependency({ raw: spec, ...resolved }, parsed, targetDir, fallbackDependenciesDir, dependency)
           if (updated === 'skip') break // move on to next dep
-        } else updated = await fetchRegistryDependency({ raw: spec }, targetDir)
+        } else {
+          const manifest = preResolved ? result.manifest : await pacote.manifest(spec, npmOpts)
+          updated = await extractRegistryDependency({ raw: spec }, manifest, targetDir)
+        }
         if (!updated && !rerunNpmCi) break // stop checking fallbacks
         if (!skipDeps) installDependencies(listType, targetDir, dependency, parsed.type === 'git')
         break // if it successfully fetches, skip trying the fallback
